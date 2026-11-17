@@ -1,7 +1,8 @@
-const { json, getConfig, hgetall, str } = require('./_lib');
-// Public : infos de l'EVG + prénoms de ceux qui ont répondu "je viens"
+const { json, getConfig, hgetall, str, getMember } = require('./_lib');
+// Infos de l'EVG + prénoms de ceux qui ont répondu "je viens" (réservé aux participants connectés)
 module.exports = async (req, res) => {
   try {
+    if (!(await getMember(req))) return json(res, 401, { error: 'Non connecté' });
     const cfg = await getConfig();
     const rsvps = await hgetall('evg:rsvps');
     const venus = rsvps.filter(r => r.statut === 'oui').map(r => str(r.prenom, 40));

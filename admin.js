@@ -1,40 +1,33 @@
+// Espace orga : chargé dans l'app uniquement pour David, Alon et Raphaël (l'API vérifie le rôle à chaque appel)
+window.EVGAdmin = (() => {
 const P = window.EVGPrice, $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const euro = n => (Math.round(n * 10) / 10).toLocaleString('fr-FR') + ' €';
 const ADMINS = { david: 'David', alon: 'Alon', raphael: 'Raphaël' };
-let ME = null, TAB = 'reponses', CACHE = {};
-const TABS = [['reponses','📥 Réponses'],['activites','🎯 Activités'],['propositions','📬 Propositions'],['membres','👥 Membres'],['idees','🔒 Idées orga'],['taches','✅ Tâches'],['notes','📝 Notes'],['reglages','⚙️ Réglages']];
+let ME = null, TAB = 'securite', CACHE = {};
+const TABS = [['securite','🛡️ Sécurité'],['reponses','📥 Réponses'],['activites','🎯 Activités'],['propositions','📬 Propositions'],['idees','🔒 Idées orga'],['taches','✅ Tâches'],['notes','📝 Notes'],['reglages','⚙️ Réglages']];
 
 async function api(method, col, body, id) {
   const r = await fetch(`/api/admin?col=${col}${id ? '&id=' + encodeURIComponent(id) : ''}`, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
-  if (r.status === 401) { showLogin(); throw new Error('Non connecté'); }
+  if (r.status === 401) { location.replace('/login'); throw new Error('Non connecté'); }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || 'Erreur');
   return j;
 }
-const toast = m => alert(m);
+const ago = iso => { if (!iso) return '–'; const m = Math.max(0, (Date.now() - new Date(iso)) / 6e4 | 0); return m < 1 ? "à l'instant" : m < 60 ? `il y a ${m} min` : m < 1440 ? `il y a ${m / 60 | 0} h` : `il y a ${m / 1440 | 0} j`; };
+const when = iso => iso ? new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '–';
 
-// ---------- Connexion ----------
-function showLogin() { $('app').hidden = true; $('login').hidden = false; }
-$('loginForm').addEventListener('submit', async e => {
-  e.preventDefault(); const f = new FormData(e.target); $('loginMsg').textContent = '';
-  const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: f.get('user'), password: f.get('password') }) });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) { $('loginMsg').textContent = j.error || 'Erreur'; return; }
-  e.target.reset(); start();
-});
-$('logout').onclick = async () => { await fetch('/api/me', { method: 'POST' }); showLogin(); };
-async function start() {
-  const r = await fetch('/api/me'); if (!r.ok) return showLogin();
-  ME = await r.json(); $('whoName').textContent = ME.nom; $('login').hidden = true; $('app').hidden = false;
-  $('tabs').innerHTML = TABS.map(([k, l]) => `<button data-t="${k}">${l}</button>`).join('');
-  $('tabs').querySelectorAll('button').forEach(b => b.onclick = () => { TAB = b.dataset.t; render(); });
+function start(me) {
+  ME = { user: me.admin, nom: me.prenom };
+  try { TAB = sessionStorage.getItem('evg_tab') || TAB; } catch {}
+  $('tabs').innerHTML = TABS.map(([k, l]) => `<button type="button" data-t="${k}">${l}</button>`).join('');
+  $('tabs').querySelectorAll('button').forEach(b => b.onclick = () => { TAB = b.dataset.t; try { sessionStorage.setItem('evg_tab', TAB); } catch {} render(); });
   render();
 }
 async function render() {
   $('tabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === TAB));
-  $('view').innerHTML = '<p>Chargement…</p>';
-  try { await ({ reponses, activites, propositions, membres, idees, taches, notes, reglages })[TAB](); } catch (e) { if (e.message !== 'Non connecté') $('view').innerHTML = `<p class="formMsg err">⚠️ ${esc(e.message)}</p>`; }
+  $('view').innerHTML = '<p class="hint">Chargement…</p>';
+  try { await ({ securite, reponses, activites, propositions, idees, taches, notes, reglages })[TAB](); } catch (e) { if (e.message !== 'Non connecté') $('view').innerHTML = `<p class="formMsg err">⚠️ ${esc(e.message)}</p>`; }
 }
 
 // ---------- Dialogue de formulaire générique ----------
@@ -184,23 +177,78 @@ async function propositions() {
   $('addDefi').onclick = async () => { const v = await openForm('Nouveau défi', DEFI_F, { n: '3' }); if (v && v.t) { await api('POST', 'defis', { n: v.n === 'g' ? 'g' : +v.n, t: v.t }); render(); } };
 }
 
-// ---------- 👥 Membres + lien d'invitation ----------
-async function membres() {
-  const [ms, rs, votes, inv] = await Promise.all([api('GET', 'members'), api('GET', 'rsvps'), api('GET', 'votes'), api('GET', 'invite')]);
-  const link = `${location.origin}/?c=${inv.code}`, hasR = new Set(rs.map(r => r.id)), hasV = new Set(votes.map(v => v.id));
-  ms.sort((a, b) => a.prenom.localeCompare(b.prenom));
-  $('view').innerHTML = `<div class="panel"><h2>🔗 Lien d'invitation</h2>
-    <p class="hint2">C'est ce lien qui permet de <b>créer un compte</b> (il contient un code secret). Envoyez-le uniquement aux participants. Se connecter à un compte existant ne demande pas le lien.</p>
+// ---------- 🛡️ Sécurité : comptes, appareils, invitations, journal ----------
+const EV = {
+  login: ['🔓', 'Connexion'], login_fail: ['❌', 'Code erroné'], register: ['🆕', 'Compte créé'], device_new: ['📱', 'Nouvel appareil'], device_limit: ['⛔', 'Limite d\'appareils atteinte'],
+  city_change: ['🌍', 'Changement de ville'], screenshot: ['📸', 'Tentative de capture'], print: ['🖨️', 'Tentative d\'impression'], devtools: ['🧑‍💻', 'Outils développeur'], copy: ['📋', 'Tentative de copie'],
+  record: ['🎥', 'Enregistrement d\'écran'], panic: ['🙈', 'Bouton panique'], bad_invite: ['🚫', 'Code d\'invitation faux'], blocked_try: ['🚷', 'Compte bloqué a tenté'], admin_fail: ['🚨', 'Mot de passe orga faux'],
+  self_revoke: ['🔌', 'A déconnecté un appareil'], admin_approve: ['✅', 'Compte validé'], admin_block: ['🚷', 'Compte bloqué'], admin_unblock: ['♻️', 'Compte débloqué'], admin_revoke: ['🔌', 'Appareil déconnecté'],
+  admin_logoutAll: ['🔌', 'Tout déconnecté'], admin_reset: ['🗑️', 'Compte réinitialisé'], admin_limit: ['🔢', 'Limite modifiée'], invite_reset: ['🔄', 'Lien d\'invitation régénéré'], settings: ['⚙️', 'Réglages sécurité'],
+};
+const ALERT = new Set(['device_limit', 'screenshot', 'print', 'devtools', 'record', 'bad_invite', 'blocked_try', 'admin_fail', 'city_change', 'copy']);
+const icon = l => /iPhone|Android/.test(l) ? '📱' : /iPad/.test(l) ? '📲' : '💻';
+let LOGF = 'alertes';
+async function securite() {
+  const [ms, sec, inv, log] = await Promise.all([api('GET', 'members'), api('GET', 'security'), api('GET', 'invite'), api('GET', 'log')]);
+  const link = `${location.origin}/?c=${inv.code}`;
+  const pending = ms.filter(m => m.status === 'pending'), now = Date.now();
+  const online = ms.filter(m => m.sessions.some(s => now - new Date(s.lastSeen) < 5 * 6e4)).length;
+  const multi = ms.filter(m => m.role !== 'admin' && m.sessions.length > 1).length;
+  const alerts24 = log.filter(e => ALERT.has(e.type) && now - new Date(e.t) < 864e5).length;
+  ms.sort((a, b) => (a.status === 'pending' ? -1 : 0) - (b.status === 'pending' ? -1 : 0) || (b.sessions[0]?.lastSeen || '').localeCompare(a.sessions[0]?.lastSeen || '') || a.prenom.localeCompare(b.prenom));
+  const statusChip = m => m.role === 'admin' ? '<span class="chip gold">orga</span>' : { active: '<span class="chip ok">actif</span>', pending: '<span class="chip warn">en attente</span>', blocked: '<span class="chip bad">bloqué</span>' }[m.status];
+  const logRows = log.filter(e => LOGF === 'tout' || ALERT.has(e.type)).slice(0, 150);
+  $('view').innerHTML = `
+  <div class="stats"><div class="stat"><b>${ms.filter(m => m.role !== 'admin').length}</b><span>comptes</span></div><div class="stat"><b>${online}</b><span>🟢 en ligne</span></div>
+    <div class="stat ${pending.length ? 'hot' : ''}"><b>${pending.length}</b><span>⏳ à valider</span></div><div class="stat"><b>${multi}</b><span>📱 multi-appareils</span></div><div class="stat ${alerts24 ? 'hot' : ''}"><b>${alerts24}</b><span>🚨 alertes 24 h</span></div></div>
+
+  ${pending.length ? `<div class="panel hotPanel"><h2>⏳ À valider (${pending.length})</h2><p class="hint2">Vérifiez que c'est bien un pote invité avant de valider. Au moindre doute : bloquer.</p>
+    ${pending.map(m => `<div class="taskRow"><span class="tt"><b>${esc(m.prenom)} ${esc(m.nom)}</b><br><small>${esc(m.sessions[0] ? `${m.sessions[0].label} · ${[m.sessions[0].city, m.sessions[0].country].filter(Boolean).join(', ')} · IP ${m.sessions[0].ip}` : '')} · créé ${ago(m.createdAt)}</small></span>
+      <button class="mini good" data-op="approve|${m.id}">✅ Valider</button><button class="mini danger" data-op="block|${m.id}">🚷 Bloquer</button></div>`).join('')}</div>` : ''}
+
+  <div class="panel"><h2>👥 Comptes & appareils</h2>
+    <p class="hint2">Chaque ligne = un appareil connecté. Limite par défaut : <b>${sec.maxDevices || '∞'}</b> appareil(s) par participant (les orgas n'ont pas de limite). « Déconnecter » coupe l'accès immédiatement, même aux photos.</p>
+    <div class="secList">${ms.map(m => `<div class="secItem ${m.status}"><div class="secHead"><b>${esc(m.prenom)} ${esc(m.nom)}</b> ${statusChip(m)} <span class="chip ${m.role !== 'admin' && m.sessions.length > (m.maxDevices || sec.maxDevices) ? 'bad' : ''}">${m.sessions.length} appareil${m.sessions.length > 1 ? 's' : ''}${m.maxDevices ? ' / ' + m.maxDevices + ' (perso)' : ''}</span>
+        <span class="secBtns">${m.status === 'pending' ? `<button class="mini good" data-op="approve|${m.id}">✅ Valider</button>` : ''}${m.role !== 'admin' ? (m.status === 'blocked' ? `<button class="mini good" data-op="unblock|${m.id}">♻️ Débloquer</button>` : `<button class="mini danger" data-op="block|${m.id}">🚷 Bloquer</button>`) : ''}
+        ${m.sessions.length ? `<button class="mini" data-op="logoutAll|${m.id}">🔌 Tout déconnecter</button>` : ''}${m.role !== 'admin' ? `<button class="mini" data-lim="${m.id}">🔢 Limite</button><button class="mini danger" data-op="reset|${m.id}">🗑️ Code oublié</button>` : ''}</span></div>
+      ${m.sessions.map(s => `<div class="devRow"><span>${icon(s.label)}</span><div><b>${esc(s.label)}</b> <small>${esc([s.city, s.country].filter(Boolean).join(', ') || '?')} · IP ${esc(s.ip)} · ${now - new Date(s.lastSeen) < 5 * 6e4 ? '🟢 en ligne' : 'vu ' + ago(s.lastSeen)}${s.page ? ' sur ' + esc(s.page) : ''} · connecté le ${when(s.createdAt)} · empreinte ${esc(s.fp || s.did)}</small></div><button class="mini danger" data-op="revoke|${m.id}|${s.id}">Déconnecter</button></div>`).join('') || '<div class="devRow"><small>Aucun appareil connecté.</small></div>'}</div>`).join('') || '<p>Aucun compte pour le moment.</p>'}</div></div>
+
+  <div class="panel"><h2>🔗 Lien d'invitation</h2>
+    <p class="hint2">Ce lien est le seul moyen de <b>créer un compte</b>. Envoyez-le uniquement dans le groupe des participants. S'il fuite : régénérez-le (les comptes existants ne bougent pas).</p>
     <input id="invLink" readonly value="${esc(link)}" onclick="this.select()">
-    <div class="row2" style="margin-top:8px"><button class="mini good" id="copyLink">📋 Copier le lien</button><button class="mini danger" id="regen">🔄 Régénérer (l'ancien lien ne marchera plus pour créer un compte)</button><span id="lnkMsg" class="hint2"></span></div></div>
-    <div class="panel"><h2>Comptes (${ms.length})</h2>
-    <p class="hint2">« Réinitialiser » supprime le compte (code oublié) : la personne se recrée un compte avec le même prénom et nom et <b>retrouve toutes ses données</b> (réponse, votes, idées).</p>
-    <div class="tblWrap"><table class="tbl"><thead><tr><th>Qui</th><th>Créé</th><th>Réponse</th><th>Votes</th><th></th></tr></thead><tbody>
-    ${ms.map(m => `<tr><td><b>${esc(m.prenom)} ${esc(m.nom)}</b></td><td>${esc((m.createdAt || '').slice(0, 10))}</td><td>${hasR.has(m.id) ? '✅' : '⏳'}</td><td>${hasV.has(m.id) ? '✅' : '⏳'}</td><td><button class="mini danger" data-rm="${m.id}">Réinitialiser</button></td></tr>`).join('') || '<tr><td colspan="5">Aucun compte pour le moment.</td></tr>'}
+    <div class="row2" style="margin-top:8px"><button class="mini good" id="copyLink">📋 Copier le message WhatsApp</button><button class="mini danger" id="regen">🔄 Régénérer</button><span id="lnkMsg" class="hint2"></span></div></div>
+
+  <div class="panel"><h2>⚙️ Réglages de sécurité</h2><form id="secForm" class="form">
+    <label class="check"><input type="checkbox" name="approval" ${sec.approval ? 'checked' : ''}> Valider chaque nouveau compte à la main (recommandé)</label>
+    <label class="check"><input type="checkbox" name="watermark" ${sec.watermark ? 'checked' : ''}> Filigrane nominatif sur tout le site (identifie l'auteur d'une capture)</label>
+    <div class="grid2"><label>Appareils max par participant (0 = illimité)<input type="number" name="maxDevices" min="0" max="10" value="${sec.maxDevices}"></label>
+    <label>Floutage auto après X min d'inactivité (0 = jamais)<input type="number" name="autoLockMin" min="0" max="60" value="${sec.autoLockMin}"></label></div>
+    <button class="btn small" type="submit">💾 Enregistrer</button> <span id="secMsg" class="hint2"></span></form></div>
+
+  <div class="panel"><h2>📜 Journal</h2>
+    <div class="modeSwitch"><button type="button" data-lf="alertes" class="${LOGF === 'alertes' ? 'on' : ''}">🚨 Alertes</button><button type="button" data-lf="tout" class="${LOGF === 'tout' ? 'on' : ''}">Tout</button></div>
+    <div class="tblWrap"><table class="tbl"><thead><tr><th>Quand</th><th>Quoi</th><th>Qui</th><th>Où / appareil</th><th>Détail</th></tr></thead><tbody>
+    ${logRows.map(e => `<tr class="${ALERT.has(e.type) ? 'alert' : ''}"><td>${when(e.t)}</td><td>${(EV[e.type] || ['•', e.type]).join(' ')}</td><td><b>${esc(e.who || '')}</b>${e.target ? ' → ' + esc(e.target) : ''}</td>
+      <td>${esc([e.city, e.country].filter(Boolean).join(', '))} · ${esc(e.label || '')}<br><small>${esc(e.ip || '')}</small></td><td><small>${esc([e.page, e.detail, e.from && e.to ? e.from + ' → ' + e.to : '', e.devices ? 'déjà sur : ' + e.devices.join(', ') : '', e.pending ? 'en attente de validation' : ''].filter(Boolean).join(' · '))}</small></td></tr>`).join('') || '<tr><td colspan="5">Rien à signaler.</td></tr>'}
     </tbody></table></div></div>`;
-  $('copyLink').onclick = async () => { try { await navigator.clipboard.writeText(link); $('lnkMsg').textContent = '✔️ Copié !'; } catch { prompt('Copie ce lien :', link); } };
-  $('regen').onclick = async () => { if (confirm("Régénérer le lien ? L'ancien ne permettra plus de créer un compte (les comptes existants ne changent pas).")) { await api('POST', 'invite', {}); render(); } };
-  $('view').querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { if (confirm('Réinitialiser ce compte ? La personne devra recréer son compte (mêmes prénom et nom) avec un nouveau code.')) { await api('DELETE', 'members', null, b.dataset.rm); render(); } });
+
+  const V = $('view');
+  V.querySelectorAll('[data-op]').forEach(b => b.onclick = async () => {
+    const [op, id, sid] = b.dataset.op.split('|');
+    const ask = { block: 'Bloquer ce compte ? Tous ses appareils sont déconnectés immédiatement.', reset: 'Code oublié : supprimer le compte ? La personne le recrée (mêmes prénom et nom) et retrouve ses réponses et votes.', logoutAll: 'Déconnecter tous ses appareils ?', revoke: 'Déconnecter cet appareil ?' }[op];
+    if (ask && !confirm(ask)) return;
+    await api('POST', 'members', { op, id, sid }); render();
+  });
+  V.querySelectorAll('[data-lim]').forEach(b => b.onclick = async () => { const v = prompt('Nombre max d\'appareils pour ce compte (vide = réglage général) :'); if (v === null) return; await api('POST', 'members', { op: 'limit', id: b.dataset.lim, maxDevices: v }); render(); });
+  V.querySelectorAll('[data-lf]').forEach(b => b.onclick = () => { LOGF = b.dataset.lf; render(); });
+  $('copyLink').onclick = async () => {
+    const msg = `🔐 Accès privé : EVG d'Elie\nCrée ton compte avec ce lien (perso, NE PAS transférer) 👉 ${link}\nTu restes connecté ensuite. Chut, Elie ne sait rien 🤫`;
+    try { await navigator.clipboard.writeText(msg); $('lnkMsg').textContent = '✔️ Copié, colle-le dans WhatsApp !'; } catch { prompt('Copie ce message :', msg); }
+  };
+  $('regen').onclick = async () => { if (confirm("Régénérer le lien ? L'ancien ne permettra plus de créer un compte.")) { await api('POST', 'invite', {}); render(); } };
+  $('secForm').onsubmit = async e => { e.preventDefault(); const f = new FormData(e.target);
+    await api('PUT', 'security', { approval: f.get('approval') === 'on', watermark: f.get('watermark') === 'on', maxDevices: f.get('maxDevices'), autoLockMin: f.get('autoLockMin') });
+    $('secMsg').textContent = '✔️ Enregistré'; };
 }
 
 // ---------- 🔒 Idées orga (privées) ----------
@@ -270,4 +318,5 @@ async function reglages() {
       programme: textToProg(f.get('programme')) };
     try { await api('PUT', 'config', body); $('cfgMsg').className = 'formMsg ok'; $('cfgMsg').textContent = '✅ Enregistré — visible sur le site.'; } catch (err) { $('cfgMsg').className = 'formMsg err'; $('cfgMsg').textContent = err.message; } };
 }
-start();
+return { start, refresh: render };
+})();

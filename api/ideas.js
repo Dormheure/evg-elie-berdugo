@@ -7,12 +7,12 @@ const { loadIdeas, CATEGORIES } = require('./_ideas');
 module.exports = async (req, res) => {
   try {
     const me = await getMember(req);
+    if (!me) return json(res, 401, { error: 'Connecte-toi pour voir, proposer, liker ou commenter.' });
     if (req.method === 'GET') {
-      const ideas = await loadIdeas(me?.id);
+      const ideas = await loadIdeas(me.id);
       return json(res, 200, { ideas, categories: CATEGORIES, member: me });
     }
     if (req.method !== 'POST') return json(res, 405, { error: 'Méthode non autorisée' });
-    if (!me) return json(res, 401, { error: 'Connecte-toi pour proposer, liker ou commenter.' });
     if (!isJson(req)) return json(res, 400, { error: 'Requête invalide.' });
     const b = body(req); if (!b) return json(res, 400, { error: 'Requête invalide.' });
     if (!(await rateLimit(req, 'ideas', 120, 3600))) return json(res, 429, { error: 'Trop d\'actions, réessaie plus tard.' });

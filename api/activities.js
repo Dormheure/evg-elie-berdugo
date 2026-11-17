@@ -1,15 +1,15 @@
 const { redis, hgetall, json, rateLimit, getConfig, str, seedActivities, body, isJson, getMember } = require('./_lib');
 
-// GET  : catalogue + compteurs de votes (+ mes votes si prenom/nom fournis)
-// POST : enregistre les votes d'un participant {prenom, nom, votes:{id:'oui'|'non'}}
+// GET  : catalogue + compteurs de votes + mes votes (compte requis)
+// POST : enregistre mes votes {votes:{id:'oui'|'non'|null}}
 module.exports = async (req, res) => {
   try {
+    const me = await getMember(req); if (!me) return json(res, 401, { error: 'Non connecté' });
     await seedActivities();
     const acts = (await hgetall('evg:activities')).filter(a => a.statut !== 'cachee');
     const ids = new Set(acts.map(a => a.id));
 
     if (req.method === 'POST') {
-      const me = await getMember(req); if (!me) return json(res, 401, { error: 'Connecte-toi pour voter.' });
       if (!(await rateLimit(req, 'votes', 200, 3600))) return json(res, 429, { error: 'Trop de tentatives.' });
       if (!isJson(req)) return json(res, 400, { error: 'Requête invalide.' });
       const b = body(req); if (!b) return json(res, 400, { error: 'Requête invalide.' });
@@ -28,9 +28,7 @@ module.exports = async (req, res) => {
     const counts = {};
     for (const a of acts) counts[a.id] = { oui: 0, non: 0 };
     for (const v of all) for (const [k, x] of Object.entries(v.votes || {})) if (counts[k]) counts[k][x === 'oui' ? 'oui' : 'non']++;
-    let mesVotes = null;
-    const me = await getMember(req);
-    if (me) { const mine = await redis('HGET', 'evg:votes', me.id); mesVotes = mine ? JSON.parse(mine).votes : {}; }
+    const mine = await redis('HGET', 'evg:votes', me.id), mesVotes = mine ? JSON.parse(mine).votes : {};
     const cfg = await getConfig();
     const rsvps = await hgetall('evg:rsvps');
     json(res, 200, {

@@ -27,16 +27,15 @@ function flatToItems(flat) {
   for (let i = 0; i < (flat || []).length; i += 2) { try { out.push(JSON.parse(flat[i + 1])); } catch {} }
   return out;
 }
-async function hgetall(key) {
-  const flat = (await redis('HGETALL', key)) || [];
-  const out = [];
-  for (let i = 0; i < flat.length; i += 2) { try { out.push(JSON.parse(flat[i + 1])); } catch {} }
-  return out;
-}
+async function hgetall(key) { return flatToItems((await redis('HGETALL', key)) || []); }
+const parse = raw => { try { return raw ? JSON.parse(raw) : null; } catch { return null; } };
 
 // ---------- Réponses HTTP ----------
-const json = (res, code, data) => { res.status(code).setHeader('Cache-Control', 'no-store'); res.json(data); };
-const ip = req => (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
+const json = (res, code, data) => { res.status(code).setHeader('Cache-Control', 'no-store, private'); res.json(data); };
+const ip = req => (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'inconnue';
+const dec = s => { try { return decodeURIComponent(s || ''); } catch { return s || ''; } };
+// Géolocalisation approximative fournie par Vercel (ville / pays de l'IP)
+const geo = req => ({ city: dec(req.headers['x-vercel-ip-city']), country: req.headers['x-vercel-ip-country'] || '' });
 
 async function rateLimit(req, bucket, max, windowSec) {
   const key = `evg:rl:${bucket}:${ip(req)}`;
@@ -45,7 +44,7 @@ async function rateLimit(req, bucket, max, windowSec) {
   return n <= max;
 }
 
-// ---------- Auth admin ----------
+// ---------- Signature des cookies ----------
 const secret = () => process.env.SESSION_SECRET || '';
 const sign = p => crypto.createHmac('sha256', secret()).update(p).digest('base64url');
 const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
@@ -61,68 +60,126 @@ function checkPassword(user, password) {
   const good = Buffer.from(hash, 'hex');
   return good.length === test.length && crypto.timingSafeEqual(good, test);
 }
-function makeCookie(user, req) {
-  const p = Buffer.from(JSON.stringify({ u: user, exp: Date.now() + 7 * 864e5 })).toString('base64url');
-  const secure = (req.headers['x-forwarded-proto'] || '').includes('https') ? '; Secure' : '';
-  return `evg_session=${p}.${sign(p)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${7 * 86400}${secure}`;
-}
-const clearCookie = () => 'evg_session=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0';
-function getUser(req) {
-  if (!secret()) return null;
-  const c = (req.headers.cookie || '').split(';').map(s => s.trim()).find(s => s.startsWith('evg_session='));
-  if (!c) return null;
-  const [p, sig] = c.slice('evg_session='.length).split('.');
-  if (!p || !sig) return null;
-  const expect = sign(p);
-  if (sig.length !== expect.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect))) return null;
-  try {
-    const d = JSON.parse(Buffer.from(p, 'base64url').toString());
-    return d.exp > Date.now() && DISPLAY[d.u] ? d.u : null;
-  } catch { return null; }
-}
 
-// ---------- Comptes participants (prénom + nom + code perso) ----------
+// ---------- Comptes (prénom + nom + code perso) ----------
 const memberId = (prenom, nom) => crypto.createHash('sha1').update(norm(prenom) + '|' + norm(nom)).digest('hex').slice(0, 16);
+const adminId = user => 'adm-' + user;
 function hashPin(pin) { const salt = crypto.randomBytes(16).toString('hex'); return salt + ':' + crypto.scryptSync(String(pin), salt, 32).toString('hex'); }
 function checkPin(stored, pin) {
   const [salt, hash] = String(stored || ':').split(':');
   const test = crypto.scryptSync(String(pin), salt || 'x', 32), good = Buffer.from(hash || '', 'hex');
   return good.length === test.length && crypto.timingSafeEqual(good, test);
 }
+// les comptes créés avant la refonte n'ont ni statut ni rôle : actifs, simples participants
+const account = m => m && { ...m, status: m.status || 'active', role: m.role || 'member' };
+async function getAccount(id) { return account(parse(await redis('HGET', 'evg:members', id))); }
+const saveAccount = m => redis('HSET', 'evg:members', m.id, JSON.stringify(m));
+
+// Code d'invitation (contenu dans le lien partagé) : généré une fois, régénérable depuis l'admin
+async function inviteCode() {
+  let c = await redis('GET', 'evg:invite');
+  if (!c) { c = crypto.randomBytes(5).toString('hex'); await redis('SET', 'evg:invite', c, 'NX'); c = await redis('GET', 'evg:invite'); }
+  return c;
+}
+
+// ---------- Réglages de sécurité (modifiables depuis l'onglet Sécurité) ----------
+const DEFAULT_SECURITY = {
+  approval: true,      // un orga doit valider chaque nouveau compte
+  maxDevices: 2,       // appareils connectés en même temps par participant
+  watermark: true,     // filigrane nominatif sur tout le site
+  autoLockMin: 5,      // floute l'écran après X minutes d'inactivité (0 = jamais)
+};
+async function getSecurity() { return { ...DEFAULT_SECURITY, ...(parse(await redis('GET', 'evg:security')) || {}) }; }
+
+// ---------- Appareils ----------
+// Nom lisible d'un appareil à partir du user-agent
+function deviceLabel(ua = '') {
+  const os = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? ((ua.match(/Android[^;]*;\s*([^;)]+?)(?:\sBuild|\))/) || [])[1] || 'Android')
+    : /Macintosh|Mac OS X/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'PC Windows' : /Linux/.test(ua) ? 'Linux' : 'Appareil inconnu';
+  const br = /EdgA?\//.test(ua) ? 'Edge' : /SamsungBrowser/.test(ua) ? 'Samsung Internet' : /CriOS|Chrome\//.test(ua) ? 'Chrome' : /FxiOS|Firefox\//.test(ua) ? 'Firefox'
+    : /Instagram/.test(ua) ? 'Instagram' : /FBAN|FBAV/.test(ua) ? 'Facebook' : /Safari\//.test(ua) ? 'Safari' : 'navigateur ?';
+  return `${os} · ${br}`;
+}
+const cleanId = (v, n = 64) => String(v || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, n);
+
+// ---------- Sessions ----------
+// Cookie evg_s = {s: id de session, m: id du compte} signé. La session vit dans Redis : la supprimer déconnecte l'appareil.
+const COOKIE = 'evg_s', LIFE = 400 * 86400;   // 400 jours = maximum autorisé par les navigateurs, renouvelé à chaque visite
+function sessionCookie(sid, m, req) {
+  const p = Buffer.from(JSON.stringify({ s: sid, m })).toString('base64url');
+  const secure = (req.headers['x-forwarded-proto'] || 'https').includes('https') ? '; Secure' : '';
+  return `${COOKIE}=${p}.${sign(p)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${LIFE}${secure}`;
+}
+const clearCookies = () => [`${COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`, 'evg_member=; Path=/; Max-Age=0', 'evg_session=; Path=/; Max-Age=0'];
 function readCookie(req, name) {
   const c = (req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith(name + '='));
   return c ? c.slice(name.length + 1) : null;
 }
-function memberCookie(id, req) {
-  const p = Buffer.from(JSON.stringify({ m: id, exp: Date.now() + 90 * 864e5 })).toString('base64url');
-  const secure = (req.headers['x-forwarded-proto'] || '').includes('https') ? '; Secure' : '';
-  return `evg_member=${p}.${sign(p)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${90 * 86400}${secure}`;
-}
-const clearMemberCookie = () => 'evg_member=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0';
-// Renvoie {id, prenom, nom} si la session membre est valide ET que le compte existe encore (un reset l'invalide)
-async function getMember(req) {
+function readSessionCookie(req) {
   if (!secret()) return null;
-  const c = readCookie(req, 'evg_member'); if (!c) return null;
+  const c = readCookie(req, COOKIE); if (!c) return null;
   const [p, sig] = c.split('.'); if (!p || !sig) return null;
   const expect = sign(p);
   if (sig.length !== expect.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect))) return null;
-  try {
-    const d = JSON.parse(Buffer.from(p, 'base64url').toString()); if (!(d.exp > Date.now()) || !d.m) return null;
-    const raw = await redis('HGET', 'evg:members', d.m); if (!raw) return null;
-    const m = JSON.parse(raw); return { id: m.id, prenom: m.prenom, nom: m.nom };
-  } catch { return null; }
+  try { const d = JSON.parse(Buffer.from(p, 'base64url').toString()); return d.s && d.m ? d : null; } catch { return null; }
 }
-// Code d'invitation (contenu dans le lien partagé) : généré une fois, régénérable depuis l'admin
-async function inviteCode() {
-  let c = await redis('GET', 'evg:invite');
-  if (!c) { c = crypto.randomBytes(4).toString('hex'); await redis('SET', 'evg:invite', c, 'NX'); c = await redis('GET', 'evg:invite'); }
-  return c;
+async function createSession(req, m, did, fp) {
+  const sid = crypto.randomBytes(18).toString('base64url'), now = new Date().toISOString(), ua = String(req.headers['user-agent'] || '').slice(0, 300);
+  const s = { sid, m: m.id, did, fp, ok: m.status === 'active', ua, label: deviceLabel(ua), ip: ip(req), ...geo(req), createdAt: now, lastSeen: now, page: '' };
+  await pipeline([['SET', `evg:sess:${sid}`, JSON.stringify(s), 'EX', LIFE], ['SADD', `evg:msess:${m.id}`, sid]]);
+  return s;
+}
+// Sessions encore vivantes d'un compte (nettoie celles qui ont expiré)
+async function listSessions(mid) {
+  const sids = (await redis('SMEMBERS', `evg:msess:${mid}`)) || [];
+  if (!sids.length) return [];
+  const raws = await pipeline(sids.map(s => ['GET', `evg:sess:${s}`]));
+  const dead = sids.filter((s, i) => !raws[i]);
+  if (dead.length) await redis('SREM', `evg:msess:${mid}`, ...dead);
+  return raws.map(parse).filter(Boolean);
+}
+async function revokeSession(mid, sid) { await pipeline([['DEL', `evg:sess:${sid}`], ['SREM', `evg:msess:${mid}`, sid]]); }
+async function revokeAll(mid, exceptSid) {
+  const ss = (await listSessions(mid)).filter(s => s.sid !== exceptSid);
+  for (const s of ss) await revokeSession(mid, s.sid);
+  return ss.length;
+}
+// Le statut du compte est recopié dans chaque session : c'est ce que lit le middleware (validation / blocage immédiats)
+async function syncSessions(m) {
+  const ok = m.status === 'active';
+  for (const s of await listSessions(m.id)) await redis('SET', `evg:sess:${s.sid}`, JSON.stringify({ ...s, ok }), 'KEEPTTL');
+}
+// Session courante : {sess, member} ou null. Ne renvoie que les sessions validées sauf {allowPending:true}.
+async function getSession(req, { allowPending = false } = {}) {
+  const c = readSessionCookie(req); if (!c) return null;
+  const sess = parse(await redis('GET', `evg:sess:${c.s}`));
+  if (!sess || sess.m !== c.m) return null;
+  const m = await getAccount(c.m);
+  if (!m || m.status === 'blocked') return null;
+  if (m.status !== 'active' && !allowPending) return null;
+  return { sess, member: m };
+}
+// Compatibilité avec les routes existantes : {id, prenom, nom, role} du participant connecté
+async function getMember(req) {
+  const s = await getSession(req); if (!s) return null;
+  const m = s.member; return { id: m.id, prenom: m.prenom, nom: m.nom, role: m.role, admin: m.admin };
+}
+// Orga connecté : renvoie 'david' | 'alon' | 'raphael' ou null
+async function getAdmin(req) {
+  const s = await getSession(req);
+  return s && s.member.role === 'admin' && DISPLAY[s.member.admin] ? s.member.admin : null;
+}
+
+// ---------- Journal de sécurité ----------
+async function logEvent(req, type, data = {}) {
+  const e = { t: new Date().toISOString(), type, ip: ip(req), ...geo(req), label: deviceLabel(req.headers['user-agent']), ...data };
+  await pipeline([['LPUSH', 'evg:log', JSON.stringify(e)], ['LTRIM', 'evg:log', 0, 2999]]);
 }
 
 // ---------- Config par défaut (modifiable depuis l'admin) ----------
 const DEFAULT_CONFIG = {
   lieu: 'Amsterdam 🇳🇱',
-  intro: "Les gars, c'est officiel : Elie va se marier et personne n'a réussi à l'en empêcher. On l'emmène donc à Amsterdam pour ses dernières vacances en homme libre : bateau, bière, humiliations légères. Donnez vos dispos, votre budget et vos idées, nous on s'occupe de la préparation psychologique du patient. (Chut, Elie ne sait rien 🤫)",
+  intro: "Les gars, c'est officiel : Elie va se marier et personne n'a réussi à l'en empêcher. On l'emmène donc à Amsterdam pour ses dernières 48 heures en homme libre : bateau, bière, humiliations légères. Donnez vos dispos, votre budget et vos idées, nous on s'occupe de la préparation psychologique du patient. (Chut, Elie ne sait rien 🤫)",
   deadline: '2026-12-01',
   dateFinale: '',
   dateOptions: [
@@ -132,9 +189,9 @@ const DEFAULT_CONFIG = {
   ],
   budget: [
     { poste: 'Transport (A/R)', montant: 150 },
-    { poste: 'Hébergement (3 nuits)', montant: 180 },
+    { poste: 'Hébergement (2 nuits)', montant: 160 },
     { poste: 'Activités', montant: 80 },
-    { poste: 'Restos & sorties', montant: 150 },
+    { poste: 'Restos casher & sorties', montant: 150 },
     { poste: "Part du marié (on invite Elie)", montant: 40 },
   ],
   programme: [],
@@ -143,9 +200,7 @@ const DEFAULT_CONFIG = {
   budgetActivites: 100,  // cible € / personne pour les activités (jauge)
 };
 async function getConfig() {
-  const raw = await redis('GET', 'evg:config');
-  let stored = {};
-  try { stored = raw ? JSON.parse(raw) : {}; } catch {}
+  const stored = parse(await redis('GET', 'evg:config')) || {};
   return { ...DEFAULT_CONFIG, ...stored };
 }
 
@@ -163,4 +218,9 @@ function body(req) {
 const isJson = req => /application\/json/i.test(req.headers['content-type'] || '');
 const str = (v, max = 300) => String(v ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, max);
 
-module.exports = { redis, pipeline, flatToItems, memberId, hashPin, checkPin, readCookie, memberCookie, clearMemberCookie, getMember, inviteCode, hgetall, json, ip, rateLimit, checkPassword, makeCookie, clearCookie, getUser, norm, DISPLAY, getConfig, DEFAULT_CONFIG, str, seedActivities, body, isJson };
+module.exports = {
+  redis, pipeline, flatToItems, hgetall, parse, json, ip, geo, rateLimit, norm, DISPLAY, checkPassword,
+  memberId, adminId, hashPin, checkPin, account, getAccount, saveAccount, inviteCode, getSecurity, DEFAULT_SECURITY,
+  deviceLabel, cleanId, sessionCookie, clearCookies, readSessionCookie, createSession, listSessions, revokeSession, revokeAll, syncSessions,
+  getSession, getMember, getAdmin, logEvent, getConfig, DEFAULT_CONFIG, seedActivities, body, isJson, str,
+};

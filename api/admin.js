@@ -1,12 +1,13 @@
 const crypto = require('crypto');
-const { redis, hgetall, json, getUser, getConfig, DISPLAY, str, seedActivities, body, isJson, inviteCode } = require('./_lib');
+const L = require('./_lib');
+const { redis, hgetall, json, getConfig, str, seedActivities, body, isJson, inviteCode, parse } = L;
 const { loadIdeas } = require('./_ideas');
 const COLLECTIONS = ['rsvps', 'ideas', 'tasks', 'notes', 'activities', 'votes', 'defis'];
 const READONLY = ['rsvps', 'votes'];
 
 module.exports = async (req, res) => {
-  const user = getUser(req);
-  if (!user) return json(res, 401, { error: 'Non connecté' });
+  const user = await L.getAdmin(req).catch(() => null);
+  if (!user) return json(res, 401, { error: 'Réservé aux orgas' });
   const col = req.query.col;
   const writes = ['POST', 'PUT'].includes(req.method);
   if (writes && !isJson(req)) return json(res, 400, { error: 'Requête invalide.' });
@@ -31,15 +32,51 @@ module.exports = async (req, res) => {
       return json(res, 405, { error: 'Méthode non autorisée' });
     }
 
+    // --- Réglages de sécurité ---
+    if (col === 'security') {
+      if (req.method === 'PUT') {
+        const s = { approval: !!B.approval, maxDevices: Math.max(0, Math.min(10, parseInt(B.maxDevices, 10) || 0)), watermark: !!B.watermark, autoLockMin: Math.max(0, Math.min(60, parseInt(B.autoLockMin, 10) || 0)) };
+        await redis('SET', 'evg:security', JSON.stringify(s));
+        await L.logEvent(req, 'settings', { who: L.DISPLAY[user] + ' (orga)', detail: JSON.stringify(s) });
+      }
+      return json(res, 200, await L.getSecurity());
+    }
+    // --- Journal de sécurité ---
+    if (col === 'log') {
+      const n = Math.min(1000, parseInt(req.query.n, 10) || 300);
+      return json(res, 200, ((await redis('LRANGE', 'evg:log', 0, n - 1)) || []).map(parse).filter(Boolean));
+    }
+
     // --- Code d'invitation (contenu dans le lien envoyé aux participants) ---
     if (col === 'invite') {
-      if (req.method === 'POST') { await redis('DEL', 'evg:invite'); }          // régénérer = l'ancien lien ne permet plus de créer un compte
+      if (req.method === 'POST') { await redis('DEL', 'evg:invite'); await L.logEvent(req, 'invite_reset', { who: L.DISPLAY[user] + ' (orga)' }); }
       return json(res, 200, { code: await inviteCode() });
     }
-    // --- Comptes participants : liste (sans le code) + réinitialisation ---
+
+    // --- Comptes : liste avec appareils + actions (valider, bloquer, déconnecter, réinitialiser, limite) ---
     if (col === 'members') {
-      if (req.method === 'GET') return json(res, 200, (await hgetall('evg:members')).map(m => ({ id: m.id, prenom: m.prenom, nom: m.nom, createdAt: m.createdAt })));
-      if (req.method === 'DELETE') { await redis('HDEL', 'evg:members', str(req.query.id, 40)); await redis('DEL', `evg:fail:${str(req.query.id, 40)}`); return json(res, 200, { ok: true }); }
+      if (req.method === 'GET') {
+        const ms = (await hgetall('evg:members')).map(L.account);
+        const sess = await Promise.all(ms.map(m => L.listSessions(m.id)));
+        return json(res, 200, ms.map((m, i) => ({
+          id: m.id, prenom: m.prenom, nom: m.nom, createdAt: m.createdAt, status: m.status, role: m.role, maxDevices: m.maxDevices || null,
+          sessions: sess[i].sort((a, z) => z.lastSeen.localeCompare(a.lastSeen)).map(s => ({ id: s.sid.slice(0, 8), label: s.label, ua: s.ua, ip: s.ip, city: s.city, country: s.country, createdAt: s.createdAt, lastSeen: s.lastSeen, page: s.page, did: (s.did || '').slice(0, 6), fp: (s.fp || '').slice(0, 6) })),
+        })));
+      }
+      if (req.method === 'POST') {
+        const m = await L.getAccount(str(B.id, 40)); if (!m) return json(res, 404, { error: 'Compte introuvable.' });
+        const who = L.DISPLAY[user] + ' (orga)', target = `${m.prenom} ${m.nom}`;
+        if (m.role === 'admin' && ['block', 'reset'].includes(B.op)) return json(res, 400, { error: 'Impossible sur un compte orga.' });
+        if (B.op === 'approve' || B.op === 'unblock') { m.status = 'active'; await L.saveAccount(m); await L.syncSessions(m); }
+        else if (B.op === 'block') { m.status = 'blocked'; await L.saveAccount(m); await L.revokeAll(m.id); }
+        else if (B.op === 'logoutAll') await L.revokeAll(m.id);
+        else if (B.op === 'revoke') { const s = (await L.listSessions(m.id)).find(x => x.sid.slice(0, 8) === String(B.sid)); if (s) await L.revokeSession(m.id, s.sid); }
+        else if (B.op === 'limit') { const n = parseInt(B.maxDevices, 10); m.maxDevices = n > 0 ? Math.min(10, n) : undefined; await L.saveAccount(m); }
+        else if (B.op === 'reset') { await L.revokeAll(m.id); await redis('HDEL', 'evg:members', m.id); await redis('DEL', `evg:fail:${m.id}`, `evg:mdev:${m.id}`); }
+        else return json(res, 400, { error: 'Opération inconnue.' });
+        await L.logEvent(req, 'admin_' + B.op, { who, target, m: m.id });
+        return json(res, 200, { ok: true });
+      }
       return json(res, 405, { error: 'Méthode non autorisée' });
     }
     // --- Idées proposées par les participants : modération ---
@@ -62,17 +99,14 @@ module.exports = async (req, res) => {
 
     if (req.method === 'GET') {
       if (col === 'activities') await seedActivities();
-      const items = await hgetall(key);
-      return json(res, 200, items);
+      return json(res, 200, await hgetall(key));
     }
     if (req.method === 'POST' || req.method === 'PUT') {
       if (READONLY.includes(col)) return json(res, 400, { error: 'Lecture seule.' });
       const b = B;
-      const raw = JSON.stringify(b);
-      if (raw.length > 20000) return json(res, 400, { error: 'Trop volumineux' });
+      if (JSON.stringify(b).length > 20000) return json(res, 400, { error: 'Trop volumineux' });
       const id = str(b.id, 40) || crypto.randomBytes(6).toString('hex');
-      const prev = await redis('HGET', key, id);
-      const old = prev ? JSON.parse(prev) : {};
+      const old = parse(await redis('HGET', key, id)) || {};
       if (b.source !== undefined && !/^https?:\/\//i.test(String(b.source))) b.source = '';
       const item = { ...old, ...b, id, updatedAt: new Date().toISOString(), updatedBy: user };
       if (!old.createdAt) { item.createdAt = item.updatedAt; item.createdBy = user; }
@@ -93,5 +127,5 @@ module.exports = async (req, res) => {
       return json(res, 200, { ok: true });
     }
     json(res, 405, { error: 'Méthode non autorisée' });
-  } catch (e) { json(res, 500, { error: 'Erreur serveur' }); }
+  } catch (e) { console.error(e); json(res, 500, { error: 'Erreur serveur' }); }
 };
