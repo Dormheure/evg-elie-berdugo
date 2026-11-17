@@ -1,0 +1,6 @@
+ADMIN_LOGINS.txt
+.env*
+.git
+.admin-users.json
+.session-secret
+README.md

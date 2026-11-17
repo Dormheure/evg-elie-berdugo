@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Orga — EVG Elie</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="admin.css">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body class="adminBody">
+<div id="login" class="loginBox" hidden>
+  <h1>🔐 Orga EVG</h1>
+  <p>Réservé à David, Alon et Raphaël.</p>
+  <form id="loginForm" class="form">
+    <label>Qui es-tu ?
+      <select name="user"><option value="david">David</option><option value="alon">Alon</option><option value="raphael">Raphaël</option></select></label>
+    <label>Mot de passe<input type="password" name="password" required autocomplete="current-password"></label>
+    <button class="btn" type="submit">Entrer</button>
+    <p id="loginMsg" class="formMsg err"></p>
+  </form>
+  <a href="/" class="adminLink">← retour au site</a>
+</div>
+
+<div id="app" hidden>
+  <header class="adminTop">
+    <b class="logo">🩺 Orga EVG Elie</b>
+    <nav id="tabs"></nav>
+    <span class="who">👤 <span id="whoName"></span> <button id="logout" class="linkBtn">déconnexion</button> · <a href="/" target="_blank">voir le site</a></span>
+  </header>
+  <main id="view"></main>
+</div>
+<dialog id="dlg"><form method="dialog" id="dlgForm"><h3 id="dlgTitle"></h3><div id="dlgBody"></div>
+  <div class="dlgBtns"><button value="cancel" class="btn small ghost" formnovalidate>Annuler</button><button value="ok" class="btn small">Enregistrer</button></div></form></dialog>
+<script src="pricing.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,825 @@
+[
+ {
+  "id": "heineken-experience",
+  "nom": "Heineken Experience",
+  "emoji": "🍺",
+  "categorie": "Boire & manger",
+  "description": "La brasserie mythique : visite, dégustation et rooftop. Le futur docteur prescrit de la bière, c'est bon pour la tension (non).",
+  "duree": "1h30-2h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 24.95
+    }
+   ]
+  },
+  "prixNote": "Tour standard 24,95 ; Tour + Rooftop 29,95 ; réservation d'un créneau en ligne ; pas de tarif groupe publié",
+  "hiver": true,
+  "source": "https://www.heinekenexperience.com/",
+  "verifie": true
+ },
+ {
+  "id": "heineken-vip",
+  "nom": "Heineken VIP Tour",
+  "emoji": "🥂",
+  "categorie": "Boire & manger",
+  "description": "Visite guidée en coulisses avec dégustation de 5 bières : le niveau chirurgien de la mousse.",
+  "duree": "2h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 65.0
+    }
+   ]
+  },
+  "prixNote": "Tarif officiel VIP tour ; créneau à réserver",
+  "hiver": true,
+  "source": "https://www.heinekenexperience.com/",
+  "verifie": true
+ },
+ {
+  "id": "bols-cocktail-workshop",
+  "nom": "Atelier cocktails chez Bols",
+  "emoji": "🍸",
+  "categorie": "Boire & manger",
+  "description": "Le marié apprend à shaker 2 ou 3 cocktails avec un pro. Prescription : une dose généreuse de gin, deux de rigolade.",
+  "duree": "1h30",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 34.5
+    }
+   ]
+  },
+  "prixNote": "À partir de 34,50 €/pers ; visite simple 19,50 €/pers ; ouvert tous les jours 13h-18h30 (21h ven-sam)",
+  "hiver": true,
+  "source": "https://bols.com/pages/cocktail-experience/en/",
+  "verifie": true
+ },
+ {
+  "id": "bols-bartending-course",
+  "nom": "Cours de barman d'une journée (Bols)",
+  "emoji": "🧑‍🍳",
+  "categorie": "Boire & manger",
+  "description": "Une journée pour devenir barman : techniques de base et recettes. Idéal pour servir le marié toute la nuit.",
+  "duree": "1 journée",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 99.0
+    }
+   ]
+  },
+  "prixNote": "Tarif officiel du cours d'une journée ; dates à vérifier en période de fêtes",
+  "hiver": true,
+  "source": "https://bols.com/pages/cocktail-experience/en/",
+  "verifie": true
+ },
+ {
+  "id": "beer-bike",
+  "nom": "Vélo-bar (Beer Bike) privé",
+  "emoji": "🚲",
+  "categorie": "Bateau & canaux",
+  "description": "Pédaler en rond avec la bière à la pompe, sous les yeux des touristes. Le meilleur sport pour qui déteste le sport.",
+  "duree": "1h30",
+  "prix": {
+   "type": "group",
+   "prix": 440,
+   "capacite": 12
+  },
+  "prixNote": "Bike privé 90 min : 1-6 pers = 300 €, 7-8 = 375 €, 9-12 = 440 €, 13-16 = 490 € (par groupe, boissons non incluses probablement) ; ouverture hivernale à confirmer par téléphone",
+  "hiver": true,
+  "source": "https://www.beerbikeamsterdam.com",
+  "verifie": true
+ },
+ {
+  "id": "bateau-open-bar",
+  "nom": "Bateau privé open bar",
+  "emoji": "🛥️",
+  "categorie": "Bateau & canaux",
+  "description": "Votre propre bateau sur les canaux avec bar à bord, musique et bière à volonté. Capitaine sobre, équipage moins.",
+  "duree": "1h30+",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 44.5
+    }
+   ]
+  },
+  "prixNote": "À partir de 44,50 €/pers (bateau privé ~30 pers) + 2,60 € de taxe de séjour/pers ; options : bières+bouchées 49,50 ; pizza 54,50 ; tapas 59,50 ; BBQ 69,95 ; ouvert toute l'année",
+  "hiver": true,
+  "source": "https://www.canalmotorboats.com/en/bachelor-party-amsterdam/",
+  "verifie": true
+ },
+ {
+  "id": "bateau-silent-disco",
+  "nom": "Silent disco sur bateau",
+  "emoji": "🎧",
+  "categorie": "Bateau & canaux",
+  "description": "Casques sur les oreilles, canal à tribord : tout le monde danse mal en silence. Option du bateau privé.",
+  "duree": "1h30",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 7.0
+    }
+   ]
+  },
+  "prixNote": "Supplément 7 €/pers, uniquement avec un bateau privé avec capitaine ; s'ajoute au prix du bateau",
+  "hiver": true,
+  "source": "https://www.canalmotorboats.com/en/bachelor-party-amsterdam/",
+  "verifie": true
+ },
+ {
+  "id": "bateau-prive-mokum",
+  "nom": "Sloep/remorqueur privé avec bar",
+  "emoji": "🚤",
+  "categorie": "Bateau & canaux",
+  "description": "Un bateau couvert avec couvertures et bar à bord, prêt pour la bande des 12 et plus (jusqu'à 35).",
+  "duree": "2h",
+  "prix": {
+   "type": "group",
+   "prix": 425,
+   "capacite": 35
+  },
+  "prixNote": "Par bateau : 2h = 425 €, 2h30 = 530 €, 3h = 640 € ; boissons/snacks en option (prix non publié) ; couvert l'hiver",
+  "hiver": true,
+  "source": "https://mokumboot.nl/en/private-tour/",
+  "verifie": true
+ },
+ {
+  "id": "light-festival-croisiere",
+  "nom": "Croisière Amsterdam Light Festival",
+  "emoji": "✨",
+  "categorie": "Bateau & canaux",
+  "description": "Les canaux illuminés : romantique, sauf quand c'est 10 gars en gilet. Du 26 nov. 2026 au 17 janv. 2027.",
+  "duree": "1h15",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 22.75
+    }
+   ]
+  },
+  "prixNote": "Croisière standard Damrak 22,75 € (26,75 avec boisson et stroopwafel) ; départ Middenkom 24-30 déc. ; festival 16h30-23h, fermeture 21h le 31 déc.",
+  "hiver": true,
+  "source": "https://www.stromma.com/en-nl/amsterdam/amsterdam-light-festival/amsterdam-light-festival-cruise/water-colors-cruise/",
+  "verifie": true
+ },
+ {
+  "id": "light-festival-balade",
+  "nom": "Balade Light Festival à pied",
+  "emoji": "🌃",
+  "categorie": "Insolite & culture",
+  "description": "Parcours des oeuvres lumineuses le long des canaux : gratuit, avec chocolat chaud et mauvaise blagues de rigueur.",
+  "duree": "1h30-2h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 0.0
+    }
+   ]
+  },
+  "prixNote": "Oeuvres visibles gratuitement ; plan de la balade ~6,99 € (info de revendeur, à vérifier)",
+  "hiver": true,
+  "source": "https://amsterdamlightfestival.com/en/faq-general",
+  "verifie": false
+ },
+ {
+  "id": "karting-fun-amsterdam",
+  "nom": "Karting avec bière",
+  "emoji": "🏎️",
+  "categorie": "Sport & action",
+  "description": "2 ou 3 courses de 10 min, une bière chacun et un prix pour le vainqueur. Le marié doit finir dernier, tradition oblige.",
+  "duree": "2h environ",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 62.5
+    }
+   ]
+  },
+  "prixNote": "À partir de 62,50 €/pers, groupe min. 5 ; casque, bière et résultats inclus · minimum 5 pers. demandé",
+  "hiver": true,
+  "source": "https://funamsterdam.com/activities/karting-amsterdam/",
+  "verifie": true
+ },
+ {
+  "id": "laser-tag-battle",
+  "nom": "Laser tag privé",
+  "emoji": "🔫",
+  "categorie": "Sport & action",
+  "description": "Bataille de laser en équipes, deux rounds de 15 min. Visez le marié, ne le ratez pas.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 47
+    }
+   ]
+  },
+  "prixNote": "À partir de 47 €/pers, groupe de 8 à 20 ; 2 rounds de 15 min · minimum 8 pers. demandé",
+  "hiver": true,
+  "source": "https://funamsterdam.com/activities/amsterdam-laser-tag-battle/",
+  "verifie": true
+ },
+ {
+  "id": "escape-room-fun",
+  "nom": "Escape room (groupe)",
+  "emoji": "🔐",
+  "categorie": "Jeux & défis",
+  "description": "Enfermez-vous une heure pour vous prouver que le marié ne vous sauvera pas. Esprit d'équipe garanti ou dispute assurée.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 45
+    }
+   ]
+  },
+  "prixNote": "À partir de 45 €/pers, groupe min. 6, max 20 par salle · minimum 6 pers. demandé",
+  "hiver": true,
+  "source": "https://funamsterdam.com/activities/escape-room-amsterdam/",
+  "verifie": true
+ },
+ {
+  "id": "escape-world",
+  "nom": "Escape World (Waterlooplein)",
+  "emoji": "🗝️",
+  "categorie": "Jeux & défis",
+  "description": "Salles à thèmes en centre-ville : Cabin in the Woods, Flying Dutchman... Des futurs médecins qui paniquent, c'est rassurant.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 30
+    }
+   ]
+  },
+  "prixNote": "Estimation : 25-32 €/pers selon salle et jour (2-6 joueurs par salle, groupes de 12 en 2 salles)",
+  "hiver": true,
+  "source": "https://escapeworld.nl/en/escape-room-amsterdam",
+  "verifie": false
+ },
+ {
+  "id": "rembrandt-runaway",
+  "nom": "Jeu de piste en ville Rembrandt Runaway",
+  "emoji": "🧭",
+  "categorie": "Jeux & défis",
+  "description": "Chasse au trésor en plein air dans le centre, de 3 à 36 joueurs. Marcher, râler, gagner.",
+  "duree": "1h30",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 30
+    }
+   ]
+  },
+  "prixNote": "Estimation ; prix non lisible sur la page ; réservation en ligne",
+  "hiver": true,
+  "source": "https://escapeworld.nl/en/escape-room-amsterdam",
+  "verifie": false
+ },
+ {
+  "id": "beer-olympics",
+  "nom": "Beer Olympics",
+  "emoji": "🏅",
+  "categorie": "Jeux & défis",
+  "description": "Quatre jeux à boire avec maître du jeu, médailles imaginaires et fierté nationale en jeu.",
+  "duree": "2h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 55
+    }
+   ]
+  },
+  "prixNote": "À partir de 55 €/pers, groupe min. 10 ; 4 bières/pers incluses · minimum 10 pers. demandé",
+  "hiver": true,
+  "source": "https://funamsterdam.com/activities/amsterdam-beer-olympics/",
+  "verifie": true
+ },
+ {
+  "id": "murder-mystery-diner",
+  "nom": "Dîner murder mystery",
+  "emoji": "🕵️",
+  "categorie": "Jeux & défis",
+  "description": "Dîner enquête médiéval : un coupable parmi vous, et ce n'est pas forcément celui qu'on croit.",
+  "duree": "3h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 75
+    }
+   ]
+  },
+  "prixNote": "À partir de 75 €/pers (dîner inclus) ; min. de participants à confirmer",
+  "hiver": true,
+  "source": "https://funamsterdam.com/activities/amsterdam-murder-mystery-dinner/",
+  "verifie": true
+ },
+ {
+  "id": "golflounge",
+  "nom": "Golf lounge avec simulateurs",
+  "emoji": "⛳",
+  "categorie": "Jeux & défis",
+  "description": "Simulateur de golf en box privé avec boissons : le swing du marié est un spectacle en soi.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 21.5
+    }
+   ]
+  },
+  "prixNote": "À partir de 21,50 €/pers pour 1h ; box de 6 pers, VIP de 12",
+  "hiver": true,
+  "source": "https://funamsterdam.com/activities/golflounge-amsterdam/",
+  "verifie": true
+ },
+ {
+  "id": "all-out-jeux",
+  "nom": "The All Out : fléchettes et shuffleboard",
+  "emoji": "🎯",
+  "categorie": "Jeux & défis",
+  "description": "Fléchettes interactives, shuffleboard électrique et sjoelen, le jeu de palets hollandais, entre amis.",
+  "duree": "2h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 12.5
+    }
+   ]
+  },
+  "prixNote": "Forfait 'Let the Games Begin' dès 12,50 €/pers (1-16 pers) ; forfait 3h 17,60 € ; boissons en sus",
+  "hiver": true,
+  "source": "https://www.theallout.com/packages",
+  "verifie": true
+ },
+ {
+  "id": "all-out-karaoke",
+  "nom": "The All Out : karaoké + champagne",
+  "emoji": "🎤",
+  "categorie": "Soirée",
+  "description": "Salle karaoké privée (110 min), champagne et snacks : tout pour une scène que le marié regrettera.",
+  "duree": "4h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 62.8
+    }
+   ]
+  },
+  "prixNote": "Forfait Ultimate Experience dès 62,80 €/pers (1-16 pers), karaoké max. 10 pers par salle",
+  "hiver": true,
+  "source": "https://www.theallout.com/packages",
+  "verifie": true
+ },
+ {
+  "id": "karaoke-aloha",
+  "nom": "Karaoké privé (cabine)",
+  "emoji": "🎶",
+  "categorie": "Soirée",
+  "description": "Cabine privée avec 20 000 chansons : chacun chante faux, tout le monde est ravi.",
+  "duree": "2h",
+  "prix": {
+   "type": "group",
+   "prix": 120,
+   "capacite": 10
+  },
+  "prixNote": "Estimation : ~120 € les 2h pour un groupe jusqu'à 10 (60 €/h selon revendeurs) ; à confirmer",
+  "hiver": true,
+  "source": "https://www.tripper.nl/en/preview/3710-karaoke-aloha-amsterdam-korting",
+  "verifie": false
+ },
+ {
+  "id": "bubble-football",
+  "nom": "Bubble football",
+  "emoji": "⚽",
+  "categorie": "Sport & action",
+  "description": "Foot dans des bulles gonflables : rebonds, culbutes, zéro dignité. Le marié a le droit de se faire charger.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 29.95
+    }
+   ]
+  },
+  "prixNote": "Estimation d'après revendeurs (UP Events) : 19,57 € pour 30 min, 29,95 € pour 1h ; groupe min. 4 ; extérieur en décembre · minimum 4 pers. demandé",
+  "hiver": true,
+  "source": "https://www.expedia.com/things-to-do/amsterdam-private-bubble-football-game.a48345577.activity-details",
+  "verifie": false
+ },
+ {
+  "id": "axe-throwing",
+  "nom": "Lancer de hache",
+  "emoji": "🪓",
+  "categorie": "Sport & action",
+  "description": "Lancer de haches sur cible : défoulant et à peine plus dangereux qu'une garde de nuit.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 30
+    }
+   ]
+  },
+  "prixNote": "Estimation d'après revendeurs (UP Events) ~ 25-30 €/pers ; groupe min. à confirmer · minimum 4 pers. demandé",
+  "hiver": true,
+  "source": "https://www.travelocity.com/things-to-do/axe-throwing-in-amsterdam-the-ultimate-thrill-at-up-events.a49902079.activity-details",
+  "verifie": false
+ },
+ {
+  "id": "archery-tag",
+  "nom": "Archery tag",
+  "emoji": "🏹",
+  "categorie": "Sport & action",
+  "description": "Dodgeball à l'arc avec flèches à embout mousse : Robin des Bois contre le reste du monde.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 34
+    }
+   ]
+  },
+  "prixNote": "Estimation d'après revendeurs (UP Events) : ~23 € pour 30 min, ~35 € pour 1h ; groupe min. 4 · minimum 4 pers. demandé",
+  "hiver": true,
+  "source": "https://www.expedia.com/things-to-do/amsterdam-private-archery-tag-arena.a46272997.activity-details",
+  "verifie": false
+ },
+ {
+  "id": "amsterdam-dungeon",
+  "nom": "Amsterdam Dungeon",
+  "emoji": "💀",
+  "categorie": "Insolite & culture",
+  "description": "Spectacle d'histoire macabre avec acteurs : parfait pour le futur médecin, avec peste et chirurgie d'époque.",
+  "duree": "1h20",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 19
+    },
+    {
+     "min": 10,
+     "pp": 19
+    }
+   ]
+  },
+  "prixNote": "Tarif groupe dès 10 pers : 19 € ; 25 € sur place ; combo + croisière 30 €",
+  "hiver": true,
+  "source": "https://www.thedungeons.com/amsterdam/en/tickets-prices/group-tickets/groups/",
+  "verifie": true
+ },
+ {
+  "id": "amaze",
+  "nom": "AMAZE (expérience interactive)",
+  "emoji": "🎪",
+  "categorie": "Insolite & culture",
+  "description": "Salles interactives délirantes et bar : un parc d'attractions pour adultes qui font les enfants.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 23.95
+    }
+   ]
+  },
+  "prixNote": "Regular dès 23,95 € (bar + 1h d'expérience) ; early bird dès 19,75 € ; combo dès 35,50 €",
+  "hiver": true,
+  "source": "https://www.amaze-amsterdam.com/",
+  "verifie": true
+ },
+ {
+  "id": "adam-swing",
+  "nom": "Balançoire Over the Edge (A'DAM Lookout)",
+  "emoji": "🎢",
+  "categorie": "Sport & action",
+  "description": "Balançoire au-dessus du vide à 100 m de haut : le marié hurle, la photo est gratuite dans les souvenirs.",
+  "duree": "20 min",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 7.5
+    }
+   ]
+  },
+  "prixNote": "Swing 7,50 € en ligne (8,50 € sur place) en plus de l'entrée Lookout (16,50 €) ; taille min. 1,20 m",
+  "hiver": true,
+  "source": "https://www.adamlookout.com/en/tickets/",
+  "verifie": true
+ },
+ {
+  "id": "adam-lookout-thrill",
+  "nom": "A'DAM Lookout + swing + VR",
+  "emoji": "🗼",
+  "categorie": "Sport & action",
+  "description": "Entrée, balançoire et VR en un forfait : l'EVG vertige. Groupes de 15 et plus : tarif spécial.",
+  "duree": "1h30",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 29.5
+    }
+   ]
+  },
+  "prixNote": "Combo Lookout + Thrill 29,50 € en ligne (35,50 € sur place) ; groupe 15+ : tarif sur demande",
+  "hiver": true,
+  "source": "https://www.adamlookout.com/en/tickets/",
+  "verifie": true
+ },
+ {
+  "id": "icebar",
+  "nom": "Icebar XtraCold",
+  "emoji": "🧊",
+  "categorie": "Boire & manger",
+  "description": "Bar de glace à -10 degrés avec 3 boissons, verres en glace et gros manteaux. Respire, c'est comme une salle de réa.",
+  "duree": "45 min",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 25
+    },
+    {
+     "min": 10,
+     "pp": 22
+    }
+   ]
+  },
+  "prixNote": "Estimation : 3 boissons incluses ; tarif groupe 10+ existe mais non publié ; ouvert tous les jours (jusqu'à minuit le samedi)",
+  "hiver": true,
+  "source": "https://www.xtracold.com/icebar-tickets",
+  "verifie": false
+ },
+ {
+  "id": "boom-chicago",
+  "nom": "Boom Chicago (impro en anglais)",
+  "emoji": "🎭",
+  "categorie": "Soirée",
+  "description": "Le spectacle d'improvisation en anglais qui se moque de tout le monde, avec public ciblé : le marié en première ligne.",
+  "duree": "1h30-2h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 28
+    },
+    {
+     "min": 10,
+     "pp": 24
+    }
+   ]
+  },
+  "prixNote": "Estimation : ~26-34 € par spectacle ; tarif groupe 10+ sur demande ; programmer le soir ; vérifier le calendrier du 26-31 déc.",
+  "hiver": true,
+  "source": "https://boomchicago.nl/traveltrade/",
+  "verifie": false
+ },
+ {
+  "id": "johan-cruijff-arena",
+  "nom": "Visite du stade Johan Cruijff Arena",
+  "emoji": "🏟️",
+  "categorie": "Insolite & culture",
+  "description": "Vestiaires, tunnel et pelouse de l'Ajax : le seul endroit où l'on prie le ballon.",
+  "duree": "1h15",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 22
+    },
+    {
+     "min": 10,
+     "pp": 19
+    }
+   ]
+  },
+  "prixNote": "Estimation : prix non publié sur le site ; tour de groupe guidé à réserver ; vérifier la date de fermeture les jours de match",
+  "hiver": true,
+  "source": "https://www.johancruijffarena.nl/tickets-bezoek/stadiontours/",
+  "verifie": false
+ },
+ {
+  "id": "wynand-fockink",
+  "nom": "Dégustation de genièvre chez Wynand Fockink",
+  "emoji": "🥃",
+  "categorie": "Boire & manger",
+  "description": "Le proeflokaal de 1679 : verre rempli à ras bord, on se penche pour boire sans les mains. Rituel obligatoire.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 17.5
+    }
+   ]
+  },
+  "prixNote": "Estimation : ~17,50 €/pers visite + dégustation (source revendeur) ; dégustation libre à partir de 3-8 € le verre",
+  "hiver": true,
+  "source": "https://www.wynand-fockink.nl/",
+  "verifie": false
+ },
+ {
+  "id": "brouwerij-t-ij",
+  "nom": "Brasserie 't IJ sous le moulin",
+  "emoji": "🍻",
+  "categorie": "Boire & manger",
+  "description": "Bière artisanale dans un moulin à vent. Le design du moulin est plus intéressant que vos blagues.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 15
+    }
+   ]
+  },
+  "prixNote": "Estimation : visite guidée ~ 15 € ; dégustation de groupe sur demande ; proeflokaal ouvert tous les jours",
+  "hiver": true,
+  "source": "https://www.brouwerijhetij.nl/en/",
+  "verifie": false
+ },
+ {
+  "id": "cheese-tasting",
+  "nom": "Dégustation de fromage Reypenaer",
+  "emoji": "🧀",
+  "categorie": "Boire & manger",
+  "description": "Fromages affinés et vin pour les gourmets pas sérieux. Il faut bien un peu de culture dans cet EVG.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 25
+    }
+   ]
+  },
+  "prixNote": "Estimation (prix non publié sur le site) ; réservation obligatoire ; groupes sur demande",
+  "hiver": true,
+  "source": "https://www.reypenaer.nl/amsterdam-tasting-room",
+  "verifie": false
+ },
+ {
+  "id": "stroopwafel-workshop",
+  "nom": "Atelier stroopwafels",
+  "emoji": "🧇",
+  "categorie": "Boire & manger",
+  "description": "Pétrir, presser, napper de sirop : un atelier convivial où le marié confond caramel et chirurgie.",
+  "duree": "1h30",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 35
+    }
+   ]
+  },
+  "prixNote": "Estimation d'après le catalogue Fun Amsterdam ; groupe min. à confirmer · minimum 6 pers. demandé",
+  "hiver": true,
+  "source": "https://funamsterdam.com/activities/",
+  "verifie": false
+ },
+ {
+  "id": "patinoire-museumplein",
+  "nom": "Patinoire Museumplein",
+  "emoji": "⛸️",
+  "categorie": "Sport & action",
+  "description": "Patinage au pied du Rijksmuseum, option « chute du marié ». Ouverte jusqu'au 16 janvier 2027.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 16
+    }
+   ]
+  },
+  "prixNote": "Prix 2025-26 : 16 €/pers avec location de patins ; saison 2026-27 du 24 oct. au 16 janv., à confirmer",
+  "hiver": true,
+  "source": "https://www.iamsterdam.com/en/whats-on/calendar/festivals/events/ice-rink-at-museumplein",
+  "verifie": false
+ },
+ {
+  "id": "pub-crawl",
+  "nom": "Pub crawl dans le centre",
+  "emoji": "🍺",
+  "categorie": "Soirée",
+  "description": "Tournée de bars avec guide, shots et jeux : l'échauffement avant la nuit, sans le quartier rouge.",
+  "duree": "3-4h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 25
+    }
+   ]
+  },
+  "prixNote": "Estimation : 20-30 €/pers hors nouvel an ; réveillon pub crawl plus cher (~70 €) ; choisir un parcours centre ou Leidseplein",
+  "hiver": true,
+  "source": "https://www.amsterdamtourism.org/amsterdam-pub-crawls/",
+  "verifie": false
+ },
+ {
+  "id": "oliebollen",
+  "nom": "Oliebollen et chocolat chaud",
+  "emoji": "🍩",
+  "categorie": "Boire & manger",
+  "description": "Les beignets du Nouvel An dans les stands de rue : le dernier repas avant la gueule de bois.",
+  "duree": "30 min",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 6
+    }
+   ]
+  },
+  "prixNote": "Estimation : environ 1,50-2 € l'oliebol ; stands de rue ouverts surtout du 26 au 31 déc.",
+  "hiver": true,
+  "source": "https://fullsuitcase.com/amsterdam-christmas/",
+  "verifie": false
+ },
+ {
+  "id": "zaanse-schans",
+  "nom": "Zaanse Schans (moulins)",
+  "emoji": "🌬️",
+  "categorie": "Insolite & culture",
+  "description": "Escapade aux moulins à vent, sabots et fromagerie à 20 min en bus. Photos obligatoires avec un sabot sur la tête.",
+  "duree": "3-4h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 15
+    }
+   ]
+  },
+  "prixNote": "Estimation : site en plein air gratuit ; musées et moulins payants (~5-15 €) ; vérifier les horaires hivernaux",
+  "hiver": true,
+  "source": "https://www.dezaanseschans.nl/en/",
+  "verifie": false
+ }
+]
