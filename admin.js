@@ -242,7 +242,7 @@ async function securite() {
   V.querySelectorAll('[data-lim]').forEach(b => b.onclick = async () => { const v = prompt('Nombre max d\'appareils pour ce compte (vide = réglage général) :'); if (v === null) return; await api('POST', 'members', { op: 'limit', id: b.dataset.lim, maxDevices: v }); render(); });
   V.querySelectorAll('[data-lf]').forEach(b => b.onclick = () => { LOGF = b.dataset.lf; render(); });
   $('copyLink').onclick = async () => {
-    const msg = `🔐 Accès privé : EVG d'Elie\nCrée ton compte avec ce lien (perso, NE PAS transférer) 👉 ${link}\nTu restes connecté ensuite. Chut, Elie ne sait rien 🤫`;
+    const msg = `🚨 EVG D'ELIE · AMSTERDAM 🚨\n\nLe Dr Berdugo se marie, on l'opère d'urgence. Toutes les infos, le vote des activités et les défis sont ici 👇\n\n${link}\n\n1️⃣ Crée ton compte (prénom, nom, un code perso)\n2️⃣ Réponds aux 3 questions : dates, lieu, d'où tu pars\n3️⃣ Vote les activités en swipe 😈\n\n🔐 Lien perso : ne le transfère à PERSONNE (surtout pas à Elie). 🤫`;
     try { await navigator.clipboard.writeText(msg); $('lnkMsg').textContent = '✔️ Copié, colle-le dans WhatsApp !'; } catch { prompt('Copie ce message :', msg); }
   };
   $('regen').onclick = async () => { if (confirm("Régénérer le lien ? L'ancien ne permettra plus de créer un compte.")) { await api('POST', 'invite', {}); render(); } };
