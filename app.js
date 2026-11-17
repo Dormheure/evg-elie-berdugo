@@ -12,15 +12,13 @@ const okUrl = u => /^https?:\/\//i.test(u || '') ? u : '';
 
 // ---------- Contenu statique (data.js) ----------
 $('titre').textContent = S.titre; $('sousTitre').textContent = S.sousTitre;
-$('marquee').textContent = `🚨 EVG DU DOCTEUR ${S.nom.toUpperCase()} 🚨 AMSTERDAM 🚨 ON NE CHOISIT PAS SES AMIS, ON LES SUBIT 🚨 `.repeat(6);
+$('marquee').textContent = `🚨 ALERTE : LE DR ${S.nom.toUpperCase()} PERD SA LIBERTÉ 🚨 AMSTERDAM 🚨 ON NE CHOISIT PAS SES AMIS, ON LES SUBIT 🚨 AUCUN MÉDECIN NE SERA BLESSÉ (POUR L'INSTANT) 🚨 `.repeat(6);
 const photo = (p, big) => p.fichier
   ? `<img src="photos/${big ? '' : 'thumbs/'}${encodeURI(p.fichier)}" alt="${safe(p.legende||S.nom)}" ${big?'fetchpriority="high"':'loading="lazy"'} decoding="async">`
   : `<div class="ph"><span>${big?'🤓':'🤡'}</span>Photo d'${safe(S.nom.split(' ')[0])}<br>à mettre ici</div>`;
 $('heroPhoto').innerHTML = `<div class="frame">${photo({fichier:S.photoPrincipale||S.photos[0]?.fichier||'',legende:S.nom},true)}</div>`;
 $('gallery').innerHTML = S.photos.map(p=>`<figure class="polaroid"><div class="img">${photo(p)}</div><figcaption>${safe(p.legende)}</figcaption></figure>`).join('');
 $('diagnostic').innerHTML = S.diagnostic.map(([a,b])=>`<tr><th scope="row">${safe(a)}</th><td>${safe(b)}</td></tr>`).join('');
-$('defis').innerHTML = S.defis.map(d=>`<li>🎯 ${safe(d)}</li>`).join('');
-$('randDefi').onclick = () => $('defiResult').textContent = '👉 ' + S.defis[Math.random()*S.defis.length|0];
 
 // ---------- Identité partagée (formulaire + votes) ----------
 const me = store.get('evg_me', { prenom: '', nom: '' });
@@ -49,7 +47,7 @@ async function loadConfig() {
     syncRequired(); prefillForm();
   }
   $('programme').innerHTML = CFG.programme.map(day => `<div class="day"><b>${safe(day.jour)}</b><h3>${safe(day.titre)}</h3><ul>${day.items.map(i => `<li>${safe(i)}</li>`).join('')}</ul></div>`).join('');
-  $('participants').innerHTML = VENUS.length ? VENUS.map(n => `<div class="person"><b>${safe(n)}</b><span class="badge">confirmé ✅</span></div>`).join('') : '<p class="hint">Personne n\'a encore confirmé… soyez le premier !</p>';
+  $('participants').innerHTML = VENUS.length ? VENUS.map(n => `<div class="person"><b>${safe(n)}</b><span class="badge">confirmé ✅</span></div>`).join('') : '<p class="hint">Aucun complice pour l\'instant. Elie se croit en sécurité.</p>';
   $('nbVenus').textContent = VENUS.length + ' confirmé' + (VENUS.length > 1 ? 's' : '');
   const closed = !CFG.dateFinale && CFG.deadline && Date.now() > new Date(CFG.deadline + 'T23:59').getTime();
   $('countLabel').textContent = CFG.dateFinale ? 'Départ dans…' : closed ? 'La date limite est passée, mais écris-nous vite !' : 'Fin des réponses dans…';
@@ -91,7 +89,7 @@ form.addEventListener('submit', async e => {
   try {
     const r = await postJSON('/api/rsvp', body);
     store.set('evg_form', Object.fromEntries([...f.entries()]));
-    msg.className = 'formMsg ok'; msg.textContent = r.modifie ? '✅ Réponse mise à jour, merci !' : '✅ Réponse enregistrée, merci !';
+    msg.className = 'formMsg ok'; msg.textContent = r.modifie ? '✅ Réponse mise à jour, merci !' : '✅ Réponse enregistrée. Elie ne se doute de rien, bien joué 🕵️';
     $('goVote').hidden = false; loadConfig().catch(() => {});
   } catch (err) { msg.className = 'formMsg err'; msg.textContent = '⚠️ ' + err.message; }
   btn.disabled = false;
@@ -123,7 +121,7 @@ function renderActivities() {
   // Podium
   const T = ACFG.budgetActivites || 100;
   if (!top.length) {
-    $('podium').innerHTML = `<h3>🏆 Le podium</h3><p class="hint light">Aucun vote pour l'instant. Vote 😍 sur les activités qui te tentent : les ${N} plus plébiscitées formeront le podium, avec le prix par personne.</p>`;
+    $('podium').innerHTML = `<h3>🏆 Le podium</h3><p class="hint light">Personne n'a encore voté : Elie dort tranquille, plus pour longtemps. Vote 😍 sur ce qui te tente : les ${N} plus plébiscitées formeront le podium, avec le prix par personne.</p>`;
   } else {
     const est = P.estimate(top, NB, ACFG.inviterMarie), max = Math.max(T * 2, est.parPayeur * 1.15), pct = v => Math.min(100, v / max * 100);
     const zone = est.parPayeur <= T ? 'ok' : est.parPayeur <= T * 1.5 ? 'mid' : 'bad';
@@ -200,8 +198,8 @@ function renderDeck() {
   $('btnUndo').disabled = !HIST.length;
   const off = !(me.prenom.trim() && me.nom.trim()) || !n;
   ['btnNo', 'btnYes', 'btnSkip'].forEach(i => $(i).disabled = off);
-  if (!(me.prenom.trim() && me.nom.trim())) { el.innerHTML = '<div class="scard gate"><div class="sem">👆</div><h3>Qui es-tu ?</h3><p>Entre ton <b>prénom</b> et ton <b>nom</b> juste au-dessus pour commencer à voter.</p></div>'; return; }
-  if (!n) { el.innerHTML = `<div class="scard gate"><div class="sem">🎉</div><h3>Tu as tout voté, merci !</h3><p>${ACTS.filter(a => MINE[a.id] === 'oui').length} 😍 · ${ACTS.filter(a => MINE[a.id] === 'non').length} 🙅</p><a class="btn small" href="#podium">Voir le podium 🏆</a> <button type="button" class="btn small ghost" id="seeList">Revoir mes votes</button></div>`; $('seeList').onclick = () => setMode('liste'); return; }
+  if (!(me.prenom.trim() && me.nom.trim())) { el.innerHTML = '<div class="scard gate"><div class="sem">👆</div><h3>Qui es-tu, soldat ?</h3><p>Entre ton <b>prénom</b> et ton <b>nom</b> juste au-dessus pour commencer à voter.</p></div>'; return; }
+  if (!n) { el.innerHTML = `<div class="scard gate"><div class="sem">🎉</div><h3>Tu as tout voté. Elie n'a aucune chance 😈</h3><p>${ACTS.filter(a => MINE[a.id] === 'oui').length} 😍 · ${ACTS.filter(a => MINE[a.id] === 'non').length} 🙅</p><a class="btn small" href="#podium">Voir le podium 🏆</a> <button type="button" class="btn small ghost" id="seeList">Revoir mes votes</button></div>`; $('seeList').onclick = () => setMode('liste'); return; }
   el.innerHTML = (n > 2 ? `<div class="scard back2"></div>` : '') + (n > 1 ? `<div class="scard back1"></div>` : '') + cardHTML(left[0]);
   attachDrag(el.querySelector('.scard[data-id]'));
 }

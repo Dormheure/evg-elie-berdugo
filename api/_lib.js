@@ -68,7 +68,7 @@ function getUser(req) {
 // ---------- Config par défaut (modifiable depuis l'admin) ----------
 const DEFAULT_CONFIG = {
   lieu: 'Amsterdam 🇳🇱',
-  intro: "Les gars, on organise l'EVG d'Elie à Amsterdam pendant les vacances de décembre. Dites-nous vos dispos, votre budget et vos envies : on s'occupe du reste. (Chut, Elie ne sait rien 🤫)",
+  intro: "Les gars, c'est officiel : Elie va se marier et personne n'a réussi à l'en empêcher. On l'emmène donc à Amsterdam pour ses dernières vacances en homme libre : bateau, bière, humiliations légères. Donnez vos dispos, votre budget et vos idées, nous on s'occupe de la préparation psychologique du patient. (Chut, Elie ne sait rien 🤫)",
   deadline: '2026-12-01',
   dateFinale: '',
   dateOptions: [

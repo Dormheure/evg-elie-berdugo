@@ -4,7 +4,7 @@
   "nom": "Heineken Experience",
   "emoji": "🍺",
   "categorie": "Boire & manger",
-  "description": "La brasserie mythique : visite, dégustation et rooftop. Le futur docteur prescrit de la bière, c'est bon pour la tension (non).",
+  "description": "Une brasserie où on te demande de boire « pour comprendre le procédé ». Elie, qui connaît tous les mécanismes du corps humain, découvrira qu'il en existe un qu'il ne maîtrise pas : le sien, après 4 verres.",
   "duree": "1h30-2h",
   "prix": {
    "type": "pp",
@@ -25,7 +25,7 @@
   "nom": "Heineken VIP Tour",
   "emoji": "🥂",
   "categorie": "Boire & manger",
-  "description": "Visite guidée en coulisses avec dégustation de 5 bières : le niveau chirurgien de la mousse.",
+  "description": "5 bières en coulisses avec un guide qui se prend pour un sommelier. Première phrase d'Elie : « c'est pour la science ».",
   "duree": "2h",
   "prix": {
    "type": "pp",
@@ -46,7 +46,7 @@
   "nom": "Atelier cocktails chez Bols",
   "emoji": "🍸",
   "categorie": "Boire & manger",
-  "description": "Le marié apprend à shaker 2 ou 3 cocktails avec un pro. Prescription : une dose généreuse de gin, deux de rigolade.",
+  "description": "Elie apprend à secouer un shaker : le premier geste technique de sa vie qui ne risque de tuer personne.",
   "duree": "1h30",
   "prix": {
    "type": "pp",
@@ -67,7 +67,7 @@
   "nom": "Cours de barman d'une journée (Bols)",
   "emoji": "🧑‍🍳",
   "categorie": "Boire & manger",
-  "description": "Une journée pour devenir barman : techniques de base et recettes. Idéal pour servir le marié toute la nuit.",
+  "description": "Une journée entière pour devenir barman, ou comment finir la formation en ayant tout bu soi-même.",
   "duree": "1 journée",
   "prix": {
    "type": "pp",
@@ -88,7 +88,7 @@
   "nom": "Vélo-bar (Beer Bike) privé",
   "emoji": "🚲",
   "categorie": "Bateau & canaux",
-  "description": "Pédaler en rond avec la bière à la pompe, sous les yeux des touristes. Le meilleur sport pour qui déteste le sport.",
+  "description": "Un vélo de 12 personnes qui avance à la bière. Les touristes vous filment en pensant que c'est une secte. Elie au guidon : première fois qu'il a une direction dans la vie.",
   "duree": "1h30",
   "prix": {
    "type": "group",
@@ -105,7 +105,7 @@
   "nom": "Bateau privé open bar",
   "emoji": "🛥️",
   "categorie": "Bateau & canaux",
-  "description": "Votre propre bateau sur les canaux avec bar à bord, musique et bière à volonté. Capitaine sobre, équipage moins.",
+  "description": "Un bateau, un bar, 12 mecs. Qu'est-ce qui pourrait mal tourner ? (Elie à la barre : tout.)",
   "duree": "1h30+",
   "prix": {
    "type": "pp",
@@ -126,7 +126,7 @@
   "nom": "Silent disco sur bateau",
   "emoji": "🎧",
   "categorie": "Bateau & canaux",
-  "description": "Casques sur les oreilles, canal à tribord : tout le monde danse mal en silence. Option du bateau privé.",
+  "description": "12 mecs avec un casque qui dansent en silence sur un bateau. Vu de la rive, ça ressemble à une intervention psychiatrique.",
   "duree": "1h30",
   "prix": {
    "type": "pp",
@@ -147,7 +147,7 @@
   "nom": "Sloep/remorqueur privé avec bar",
   "emoji": "🚤",
   "categorie": "Bateau & canaux",
-  "description": "Un bateau couvert avec couvertures et bar à bord, prêt pour la bande des 12 et plus (jusqu'à 35).",
+  "description": "Un bateau privé avec bar, assez grand pour toute la bande, et pour la honte d'Elie.",
   "duree": "2h",
   "prix": {
    "type": "group",
@@ -164,7 +164,7 @@
   "nom": "Croisière Amsterdam Light Festival",
   "emoji": "✨",
   "categorie": "Bateau & canaux",
-  "description": "Les canaux illuminés : romantique, sauf quand c'est 10 gars en gilet. Du 26 nov. 2026 au 17 janv. 2027.",
+  "description": "Les canaux illuminés, une musique douce, 11 mecs en gilet de sauvetage. Romantique, sauf pour celui qui sait que c'est exactement ce qui l'attend chaque année avec sa femme.",
   "duree": "1h15",
   "prix": {
    "type": "pp",
@@ -185,7 +185,7 @@
   "nom": "Balade Light Festival à pied",
   "emoji": "🌃",
   "categorie": "Insolite & culture",
-  "description": "Parcours des oeuvres lumineuses le long des canaux : gratuit, avec de mauvaises blagues de rigueur.",
+  "description": "Balade gratuite pour admirer des lumières : le seul poste de dépense sur lequel Elie ne trouvera rien à redire.",
   "duree": "1h30-2h",
   "prix": {
    "type": "pp",
@@ -206,7 +206,7 @@
   "nom": "Karting avec bière",
   "emoji": "🏎️",
   "categorie": "Sport & action",
-  "description": "2 ou 3 courses de 10 min, une bière chacun et un prix pour le vainqueur. Le marié doit finir dernier, tradition oblige.",
+  "description": "Des courses et une bière chacun. Elie conduit comme il révise : en dernière minute, en dérapage et en oubliant les règles.",
   "duree": "2h environ",
   "prix": {
    "type": "pp",
@@ -227,7 +227,7 @@
   "nom": "Laser tag privé",
   "emoji": "🔫",
   "categorie": "Sport & action",
-  "description": "Bataille de laser en équipes, deux rounds de 15 min. Visez le marié, ne le ratez pas.",
+  "description": "On vise tous Elie, c'est le règlement. Celui qui le touche en premier ne paie pas sa part (le règlement est de nous).",
   "duree": "1h",
   "prix": {
    "type": "pp",
@@ -248,7 +248,7 @@
   "nom": "Escape room (groupe)",
   "emoji": "🔐",
   "categorie": "Jeux & défis",
-  "description": "Enfermez-vous une heure pour vous prouver que le marié ne vous sauvera pas. Esprit d'équipe garanti ou dispute assurée.",
+  "description": "Enfermés une heure. Elie, futur médecin, sera incapable d'ouvrir un cadenas à 3 chiffres. Rassurant pour sa carrière.",
   "duree": "1h",
   "prix": {
    "type": "pp",
@@ -269,7 +269,7 @@
   "nom": "Escape World (Waterlooplein)",
   "emoji": "🗝️",
   "categorie": "Jeux & défis",
-  "description": "Salles à thèmes en centre-ville : Cabin in the Woods, Flying Dutchman... Des futurs médecins qui paniquent, c'est rassurant.",
+  "description": "Des salles à thèmes pour faire peur à un type qui a vu pire aux urgences. Il va prendre le pouls du fantôme.",
   "duree": "1h",
   "prix": {
    "type": "pp",
@@ -290,7 +290,7 @@
   "nom": "Jeu de piste en ville Rembrandt Runaway",
   "emoji": "🧭",
   "categorie": "Jeux & défis",
-  "description": "Chasse au trésor en plein air dans le centre, de 3 à 36 joueurs. Marcher, râler, gagner.",
+  "description": "Une chasse au trésor dans toute la ville. Elie ne lit pas les indices, il pose un diagnostic.",
   "duree": "1h30",
   "prix": {
    "type": "pp",
@@ -311,7 +311,7 @@
   "nom": "Beer Olympics",
   "emoji": "🏅",
   "categorie": "Jeux & défis",
-  "description": "Quatre jeux à boire avec maître du jeu, médailles imaginaires et fierté nationale en jeu.",
+  "description": "Des jeux à boire avec médailles. Elie représente la France de l'externat : zéro médaille, beaucoup d'excuses.",
   "duree": "2h",
   "prix": {
    "type": "pp",
@@ -332,7 +332,7 @@
   "nom": "Golf lounge avec simulateurs",
   "emoji": "⛳",
   "categorie": "Jeux & défis",
-  "description": "Simulateur de golf en box privé avec boissons : le swing du marié est un spectacle en soi.",
+  "description": "Du golf en intérieur avec boissons. Regarder Elie rater une balle immobile : un classique.",
   "duree": "1h",
   "prix": {
    "type": "pp",
@@ -353,7 +353,7 @@
   "nom": "The All Out : fléchettes et shuffleboard",
   "emoji": "🎯",
   "categorie": "Jeux & défis",
-  "description": "Fléchettes interactives, shuffleboard électrique et sjoelen, le jeu de palets hollandais, entre amis.",
+  "description": "Fléchettes, shuffleboard et palets hollandais. Elie, on ne vise pas les gens avec les fléchettes : on a déjà prévu un budget pour ça.",
   "duree": "2h",
   "prix": {
    "type": "pp",
@@ -374,7 +374,7 @@
   "nom": "The All Out : karaoké + champagne",
   "emoji": "🎤",
   "categorie": "Soirée",
-  "description": "Salle karaoké privée (110 min) avec champagne : tout pour une scène que le marié regrettera. (Sans les snacks, pas casher.)",
+  "description": "Karaoké privé avec champagne. Elie chantera faux, fort et avec les gestes. Pas de snacks (casher oblige).",
   "duree": "4h",
   "prix": {
    "type": "pp",
@@ -395,7 +395,7 @@
   "nom": "Karaoké privé (cabine)",
   "emoji": "🎶",
   "categorie": "Soirée",
-  "description": "Cabine privée avec 20 000 chansons : chacun chante faux, tout le monde est ravi.",
+  "description": "Cabine privée, 20 000 chansons, zéro dignité. Ce qui se chante à Amsterdam reste à Amsterdam.",
   "duree": "2h",
   "prix": {
    "type": "group",
@@ -412,7 +412,7 @@
   "nom": "Bubble football",
   "emoji": "⚽",
   "categorie": "Sport & action",
-  "description": "Foot dans des bulles gonflables : rebonds, culbutes, zéro dignité. Le marié a le droit de se faire charger.",
+  "description": "Du foot dans une bulle gonflable. Elie va enfin pouvoir charger quelqu'un sans lui faire signer de consentement.",
   "duree": "1h",
   "prix": {
    "type": "pp",
@@ -433,7 +433,7 @@
   "nom": "Lancer de hache",
   "emoji": "🪓",
   "categorie": "Sport & action",
-  "description": "Lancer de haches sur cible : défoulant et à peine plus dangereux qu'une garde de nuit.",
+  "description": "On donne des haches à des mecs qui ont bu. Elie a l'habitude de manier des objets tranchants, ça devrait aller (non).",
   "duree": "1h",
   "prix": {
    "type": "pp",
@@ -454,7 +454,7 @@
   "nom": "Archery tag",
   "emoji": "🏹",
   "categorie": "Sport & action",
-  "description": "Dodgeball à l'arc avec flèches à embout mousse : Robin des Bois contre le reste du monde.",
+  "description": "Du dodgeball à l'arc : on tire sur le marié avec des flèches à bout mou. Légalement, c'est de l'entraînement au mariage.",
   "duree": "1h",
   "prix": {
    "type": "pp",
@@ -475,7 +475,7 @@
   "nom": "Amsterdam Dungeon",
   "emoji": "💀",
   "categorie": "Insolite & culture",
-  "description": "Spectacle d'histoire macabre avec acteurs : parfait pour le futur médecin, avec peste et chirurgie d'époque.",
+  "description": "Un spectacle d'horreur historique avec peste et chirurgie d'époque. Elie sera calme : il a déjà vu pire en stage.",
   "duree": "1h20",
   "prix": {
    "type": "pp",
@@ -500,7 +500,7 @@
   "nom": "AMAZE (expérience interactive)",
   "emoji": "🎪",
   "categorie": "Insolite & culture",
-  "description": "Salles interactives délirantes et bar : un parc d'attractions pour adultes qui font les enfants.",
+  "description": "Un parc d'attractions pour adultes : 12 hommes de 30 ans qui hurlent dans le noir en prétendant que c'est « pour la déco ».",
   "duree": "1h",
   "prix": {
    "type": "pp",
@@ -521,7 +521,7 @@
   "nom": "Balançoire Over the Edge (A'DAM Lookout)",
   "emoji": "🎢",
   "categorie": "Sport & action",
-  "description": "Balançoire au-dessus du vide à 100 m de haut : le marié hurle, la photo est gratuite dans les souvenirs.",
+  "description": "Une balançoire au-dessus du vide à 100 m de haut. Prière d'attacher le marié. Les autres, on verra.",
   "duree": "20 min",
   "prix": {
    "type": "pp",
@@ -542,7 +542,7 @@
   "nom": "A'DAM Lookout + swing + VR",
   "emoji": "🗼",
   "categorie": "Sport & action",
-  "description": "Entrée, balançoire et VR en un forfait : l'EVG vertige. Groupes de 15 et plus : tarif spécial.",
+  "description": "Même vertige, avec de la réalité virtuelle en plus : Elie vomira aussi en réalité augmentée.",
   "duree": "1h30",
   "prix": {
    "type": "pp",
@@ -563,7 +563,7 @@
   "nom": "Icebar XtraCold",
   "emoji": "🧊",
   "categorie": "Boire & manger",
-  "description": "Bar de glace à -10 degrés avec 3 boissons, verres en glace et gros manteaux. Respire, c'est comme une salle de réa.",
+  "description": "Un bar entièrement en glace : les verres, le comptoir, et le sang-froid d'Elie quand on lui présente l'addition.",
   "duree": "45 min",
   "prix": {
    "type": "pp",
@@ -588,7 +588,7 @@
   "nom": "Boom Chicago (impro en anglais)",
   "emoji": "🎭",
   "categorie": "Soirée",
-  "description": "Le spectacle d'improvisation en anglais qui se moque de tout le monde, avec public ciblé : le marié en première ligne.",
+  "description": "De l'impro en anglais où on se moque du public. Le marié sera au premier rang, évidemment.",
   "duree": "1h30-2h",
   "prix": {
    "type": "pp",
@@ -613,7 +613,7 @@
   "nom": "Visite du stade Johan Cruijff Arena",
   "emoji": "🏟️",
   "categorie": "Insolite & culture",
-  "description": "Vestiaires, tunnel et pelouse de l'Ajax : le seul endroit où l'on prie le ballon.",
+  "description": "La visite du stade de l'Ajax. Pendant 1h15, Elie fera semblant d'aimer le foot : une première.",
   "duree": "1h15",
   "prix": {
    "type": "pp",
@@ -638,7 +638,7 @@
   "nom": "Dégustation de genièvre chez Wynand Fockink",
   "emoji": "🥃",
   "categorie": "Boire & manger",
-  "description": "Le proeflokaal de 1679 : verre rempli à ras bord, on se penche pour boire sans les mains. Rituel obligatoire.",
+  "description": "Un bar de 1679 où le verre est rempli à ras bord : on se penche et on boit sans les mains. Elie s'entraîne à s'incliner devant l'autorité.",
   "duree": "1h",
   "prix": {
    "type": "pp",
@@ -659,7 +659,7 @@
   "nom": "Brasserie 't IJ sous le moulin",
   "emoji": "🍻",
   "categorie": "Boire & manger",
-  "description": "Bière artisanale dans un moulin à vent. Le design du moulin est plus intéressant que vos blagues.",
+  "description": "De la bière artisanale sous un moulin à vent. Le moulin tourne rond, lui. Pas comme nous.",
   "duree": "1h",
   "prix": {
    "type": "pp",
@@ -680,7 +680,7 @@
   "nom": "Patinoire Museumplein",
   "emoji": "⛸️",
   "categorie": "Sport & action",
-  "description": "Patinage au pied du Rijksmuseum, option « chute du marié ». Ouverte jusqu'au 16 janvier 2027.",
+  "description": "Une patinoire au pied du Rijksmuseum. Elie va tomber, et pour une fois c'est lui le patient.",
   "duree": "1h",
   "prix": {
    "type": "pp",
@@ -701,7 +701,7 @@
   "nom": "Pub crawl dans le centre",
   "emoji": "🍺",
   "categorie": "Soirée",
-  "description": "Tournée de bars avec guide, shots et jeux : l'échauffement avant la nuit, sans le quartier rouge.",
+  "description": "Un guide, 5 bars, des shots. Elie, futur médecin, prescrit lui-même la première tournée.",
   "duree": "3-4h",
   "prix": {
    "type": "pp",
@@ -722,7 +722,7 @@
   "nom": "Zaanse Schans (moulins)",
   "emoji": "🌬️",
   "categorie": "Insolite & culture",
-  "description": "Escapade aux moulins à vent et aux sabots, à 20 min en bus. Photos obligatoires avec un sabot sur la tête.",
+  "description": "Une excursion aux moulins et aux sabots : l'activité culturelle qui permet de dire à vos parents que c'était « un voyage éducatif ».",
   "duree": "3-4h",
   "prix": {
    "type": "pp",
@@ -743,7 +743,7 @@
   "nom": "Dîner casher en groupe",
   "emoji": "🥩",
   "categorie": "Boire & manger",
-  "description": "Gros dîner de viande glatt dans un resto casher d'Amsterdam (Machane Yehuda, Meat Me Kosher, Ha-Golan…). Le marié coupe la viande, vous coupez la parole.",
+  "description": "Un gros dîner de viande glatt. Elie coupe la viande, nous on coupe la parole. Réservation indispensable : il n'y a que 3 restos casher dans toute la ville.",
   "duree": "2h",
   "prix": {
    "type": "pp",
@@ -764,7 +764,7 @@
   "nom": "Visite guidée du quartier juif",
   "emoji": "🕍",
   "categorie": "Insolite & culture",
-  "description": "Une heure de balade guidée dans le quartier juif historique d'Amsterdam : culture au programme, avant que les choses sérieuses ne commencent.",
+  "description": "Une heure de culture avec un guide, avant que les choses sérieuses ne commencent. Idéal pour prouver à vos mères que ce n'était pas qu'une EVG.",
   "duree": "1h",
   "prix": {
    "type": "group",
