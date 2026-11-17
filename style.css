@@ -247,3 +247,6 @@ figure.polaroid{margin:0}.polaroid figcaption{font-weight:700;font-size:.9rem;ma
 .com{font-size:.9rem;line-height:1.35}.com small{opacity:.6}
 .comForm{display:flex;gap:8px}.comForm input{flex:1;min-width:0;font:600 1rem Inter;padding:10px;border:3px solid var(--k);border-radius:10px}.comForm .btn{width:auto}
 @media (max-width:700px){.bottomNav a span{font-size:.62rem}.gateBox .btn{width:100%}.comForm{flex-direction:column}.comForm .btn{width:100%}.ideaTools{flex-direction:column;align-items:stretch}.sortSwitch{display:flex}}
+
+/* ===== Prix masqués (demande de l'orga) ===== */
+.sprice,.price,.podItem .pp,.est,.gauge,.nbRow{display:none!important}
