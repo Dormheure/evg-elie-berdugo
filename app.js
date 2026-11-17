@@ -9,7 +9,7 @@ $('marquee').textContent = m.repeat(6);
 const photo = (p, big) => p.fichier
   ? `<img src="photos/${encodeURI(p.fichier)}" alt="${safe(p.legende||S.nom)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',innerHTML:'<span>🤡</span>Photo introuvable'}))">`
   : `<div class="ph"><span>${big?'🤓':'🤡'}</span>Photo d'${safe(S.nom.split(' ')[0])}<br>à mettre ici</div>`;
-$('heroPhoto').innerHTML = `<div class="frame">${photo(S.photos[0]||{},true)}</div>`;
+$('heroPhoto').innerHTML = `<div class="frame">${photo({fichier:S.photoPrincipale||S.photos[0]?.fichier||'',legende:S.nom},true)}</div>`;
 $('gallery').innerHTML = S.photos.map(p=>`<div class="polaroid"><div class="img">${photo(p)}</div><p>${safe(p.legende)}</p></div>`).join('');
 $('diagnostic').innerHTML = S.diagnostic.map(([a,b])=>`<tr><td>${safe(a)}</td><td>${safe(b)}</td></tr>`).join('');
 $('programme').innerHTML = S.programme.map(d=>`<div class="day"><b>${safe(d.jour)}</b><h3>${safe(d.titre)}</h3><ul>${d.items.map(i=>`<li>${safe(i)}</li>`).join('')}</ul></div>`).join('');
