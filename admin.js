@@ -183,7 +183,7 @@ const EV = {
   city_change: ['🌍', 'Changement de ville'], screenshot: ['📸', 'Tentative de capture'], print: ['🖨️', 'Tentative d\'impression'], devtools: ['🧑‍💻', 'Outils développeur'], copy: ['📋', 'Tentative de copie'],
   record: ['🎥', 'Enregistrement d\'écran'], panic: ['🙈', 'Bouton panique'], bad_invite: ['🚫', 'Code d\'invitation faux'], blocked_try: ['🚷', 'Compte bloqué a tenté'], admin_fail: ['🚨', 'Mot de passe orga faux'],
   self_revoke: ['🔌', 'A déconnecté un appareil'], admin_approve: ['✅', 'Compte validé'], admin_block: ['🚷', 'Compte bloqué'], admin_unblock: ['♻️', 'Compte débloqué'], admin_revoke: ['🔌', 'Appareil déconnecté'],
-  admin_logoutAll: ['🔌', 'Tout déconnecté'], admin_reset: ['🗑️', 'Compte réinitialisé'], admin_limit: ['🔢', 'Limite modifiée'], invite_reset: ['🔄', 'Lien d\'invitation régénéré'], settings: ['⚙️', 'Réglages sécurité'],
+  admin_logoutAll: ['🔌', 'Tout déconnecté'], admin_reset: ['🗑️', 'Compte réinitialisé'], admin_limit: ['🔢', 'Limite modifiée'], admin_promote: ['⭐', 'Passé orga'], admin_demote: ['↩', 'Orga retiré'], invite_reset: ['🔄', 'Lien d\'invitation régénéré'], settings: ['⚙️', 'Réglages sécurité'],
 };
 const ALERT = new Set(['device_limit', 'screenshot', 'print', 'devtools', 'record', 'bad_invite', 'blocked_try', 'admin_fail', 'city_change', 'copy']);
 const icon = l => /iPhone|Android/.test(l) ? '📱' : /iPad/.test(l) ? '📲' : '💻';
@@ -210,7 +210,7 @@ async function securite() {
     <p class="hint2">Chaque ligne = un appareil connecté. Limite par défaut : <b>${sec.maxDevices || '∞'}</b> appareil(s) par participant (les orgas n'ont pas de limite). « Déconnecter » coupe l'accès immédiatement, même aux photos.</p>
     <div class="secList">${ms.map(m => `<div class="secItem ${m.status}"><div class="secHead"><b>${esc(m.prenom)} ${esc(m.nom)}</b> ${statusChip(m)} <span class="chip ${m.role !== 'admin' && m.sessions.length > (m.maxDevices || sec.maxDevices) ? 'bad' : ''}">${m.sessions.length} appareil${m.sessions.length > 1 ? 's' : ''}${m.maxDevices ? ' / ' + m.maxDevices + ' (perso)' : ''}</span>
         <span class="secBtns">${m.status === 'pending' ? `<button class="mini good" data-op="approve|${m.id}">✅ Valider</button>` : ''}${m.role !== 'admin' ? (m.status === 'blocked' ? `<button class="mini good" data-op="unblock|${m.id}">♻️ Débloquer</button>` : `<button class="mini danger" data-op="block|${m.id}">🚷 Bloquer</button>`) : ''}
-        ${m.sessions.length ? `<button class="mini" data-op="logoutAll|${m.id}">🔌 Tout déconnecter</button>` : ''}${m.role !== 'admin' ? `<button class="mini" data-lim="${m.id}">🔢 Limite</button><button class="mini danger" data-op="reset|${m.id}">🗑️ Code oublié</button>` : ''}</span></div>
+        ${m.sessions.length ? `<button class="mini" data-op="logoutAll|${m.id}">🔌 Tout déconnecter</button>` : ''}${m.role !== 'admin' ? `<button class="mini" data-lim="${m.id}">🔢 Limite</button><button class="mini" data-pro="${m.id}">⭐ Passer orga</button><button class="mini danger" data-op="reset|${m.id}">🗑️ Code oublié</button>` : !m.id.startsWith('adm-') ? `<button class="mini" data-op="demote|${m.id}">↩ Retirer orga</button>` : ''}</span></div>
       ${m.sessions.map(s => `<div class="devRow"><span>${icon(s.label)}</span><div><b>${esc(s.label)}</b> <small>${esc([s.city, s.country].filter(Boolean).join(', ') || '?')} · IP ${esc(s.ip)} · ${now - new Date(s.lastSeen) < 5 * 6e4 ? '🟢 en ligne' : 'vu ' + ago(s.lastSeen)}${s.page ? ' sur ' + esc(s.page) : ''} · connecté le ${when(s.createdAt)} · empreinte ${esc(s.fp || s.did)}</small></div><button class="mini danger" data-op="revoke|${m.id}|${s.id}">Déconnecter</button></div>`).join('') || '<div class="devRow"><small>Aucun appareil connecté.</small></div>'}</div>`).join('') || '<p>Aucun compte pour le moment.</p>'}</div></div>
 
   <div class="panel"><h2>🔗 Lien d'invitation</h2>
@@ -235,11 +235,12 @@ async function securite() {
   const V = $('view');
   V.querySelectorAll('[data-op]').forEach(b => b.onclick = async () => {
     const [op, id, sid] = b.dataset.op.split('|');
-    const ask = { block: 'Bloquer ce compte ? Tous ses appareils sont déconnectés immédiatement.', reset: 'Code oublié : supprimer le compte ? La personne le recrée (mêmes prénom et nom) et retrouve ses réponses et votes.', logoutAll: 'Déconnecter tous ses appareils ?', revoke: 'Déconnecter cet appareil ?' }[op];
+    const ask = { demote: 'Retirer les droits orga de ce compte ?', block: 'Bloquer ce compte ? Tous ses appareils sont déconnectés immédiatement.', reset: 'Code oublié : supprimer le compte ? La personne le recrée (mêmes prénom et nom) et retrouve ses réponses et votes.', logoutAll: 'Déconnecter tous ses appareils ?', revoke: 'Déconnecter cet appareil ?' }[op];
     if (ask && !confirm(ask)) return;
     await api('POST', 'members', { op, id, sid }); render();
   });
   V.querySelectorAll('[data-lim]').forEach(b => b.onclick = async () => { const v = prompt('Nombre max d\'appareils pour ce compte (vide = réglage général) :'); if (v === null) return; await api('POST', 'members', { op: 'limit', id: b.dataset.lim, maxDevices: v }); render(); });
+  V.querySelectorAll('[data-pro]').forEach(b => b.onclick = async () => { const v = (prompt('Ce compte devient orga (pour ton compte perso). Lier à : david, alon ou raphael ?') || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); if (!v) return; try { await api('POST', 'members', { op: 'promote', id: b.dataset.pro, admin: v }); render(); } catch (e) { alert(e.message); } });
   V.querySelectorAll('[data-lf]').forEach(b => b.onclick = () => { LOGF = b.dataset.lf; render(); });
   $('copyLink').onclick = async () => {
     const msg = `🚨 EVG D'ELIE · AMSTERDAM 🚨\n\nLe Dr Berdugo se marie, on l'opère d'urgence. Toutes les infos, le vote des activités et les défis sont ici 👇\n\n${link}\n\n1️⃣ Crée ton compte (prénom, nom, un code perso)\n2️⃣ Réponds aux 3 questions : dates, lieu, d'où tu pars\n3️⃣ Vote les activités en swipe 😈\n\n🔐 Lien perso : ne le transfère à PERSONNE (surtout pas à Elie). 🤫`;

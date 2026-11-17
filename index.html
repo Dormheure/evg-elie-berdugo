@@ -14,6 +14,7 @@
 <noscript><p style="padding:20px;font-weight:900">Ce site a besoin de JavaScript pour fonctionner.</p></noscript>
 <a class="skip" href="#rsvp">Aller au formulaire</a>
 <div id="main">
+<div id="adminBar" class="adminBar top" hidden></div>
 <div class="marquee" aria-hidden="true"><div id="marquee"></div></div>
 
 <header class="hero">
@@ -30,7 +31,7 @@
 <section id="compte" class="compte slim">
   <div class="accIn">
     <span>👤 Salut <b id="whoName"></b> !</span>
-    <span class="accTools"><a href="#/orga" class="btn small orgaBtn" id="orgaBtn" hidden>🛡️ Orga</a><button type="button" class="btn small panicBtn" id="panicBtn" title="Cache l'écran instantanément">🙈 Elie arrive</button></span>
+    <span class="accTools"><a href="#/orga" class="btn small orgaBtn" id="orgaBtn" hidden>🛡️ Espace orga</a></span>
   </div>
   <details class="devBox"><summary>📱 Mes appareils connectés · mon code</summary>
     <p class="hint">Ton compte est limité en nombre d'appareils. Un appareil inconnu ? Déconnecte-le et préviens un orga.</p>
@@ -168,7 +169,7 @@
 <section id="defis">
   <h2>🎯 Les défis du docteur</h2>
   <p class="hint">À réaliser pendant le séjour. Plus c'est violent, plus ça rapporte : 🌶️ = 1 pt, 🌶️🌶️ = 2 pts, 🌶️🌶️🌶️ = 3 pts, 💀 hardcore = 5 pts, 👥 groupe = 3 pts. Cochez quand c'est fait (preuve photo ou vidéo obligatoire, sinon ça ne compte pas).</p>
-  <div class="rules"><b>Règles d'or :</b> on se moque d'Elie, de lui seul. Aucune religion, origine, handicap ou apparence ne sert de cible, et aucun inconnu n'est forcé : s'il dit non, on s'excuse et on passe au suivant. Ni nu, ni dangereux, ni illégal. Personne n'est obligé de boire : un défi se relève avec de l'eau aussi.</div>
+  <div class="rules"><b>Règles d'or :</b> la victime, c'est Elie, et lui seul. Zéro fille au programme (pas de strip, pas d'hôtesse) : madame nous surveille. 100 % casher. Les inconnus participent seulement s'ils sont d'accord. Rien d'illégal, personne à l'hôpital (Elie est le seul médecin). Un défi « à boire » se relève aussi avec 20 pompes.</div>
   <div class="defiTop"><span id="defiScore" class="chip"></span><button type="button" class="btn small" id="randDefi">🎰 Défi au hasard</button></div>
   <div id="defiCard" class="defiCard" aria-live="polite" hidden></div>
   <div id="defiFilter" class="filters"></div>
@@ -196,7 +197,6 @@
 </div></div>
 <div id="wm" class="wm" aria-hidden="true"></div>
 <div id="shield" class="shield" hidden><div><div class="shIcon">🔒</div><p>Contenu confidentiel</p><p class="hint">Touche l'écran pour revenir.</p></div></div>
-<div id="decoy" class="decoy" hidden></div>
 <dialog id="dlg"><form method="dialog" id="dlgForm"><h3 id="dlgTitle"></h3><div id="dlgBody"></div>
   <div class="dlgBtns"><button value="cancel" class="btn small ghost" formnovalidate>Annuler</button><button value="ok" class="btn small">Enregistrer</button></div></form></dialog>
 <script src="data.js"></script>

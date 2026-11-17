@@ -66,12 +66,14 @@ module.exports = async (req, res) => {
       if (req.method === 'POST') {
         const m = await L.getAccount(str(B.id, 40)); if (!m) return json(res, 404, { error: 'Compte introuvable.' });
         const who = L.DISPLAY[user] + ' (orga)', target = `${m.prenom} ${m.nom}`;
-        if (m.role === 'admin' && ['block', 'reset'].includes(B.op)) return json(res, 400, { error: 'Impossible sur un compte orga.' });
+        if (m.role === 'admin' && ['block', 'reset', 'limit'].includes(B.op)) return json(res, 400, { error: 'Impossible sur un compte orga.' });
         if (B.op === 'approve' || B.op === 'unblock') { m.status = 'active'; await L.saveAccount(m); await L.syncSessions(m); }
         else if (B.op === 'block') { m.status = 'blocked'; await L.saveAccount(m); await L.revokeAll(m.id); }
         else if (B.op === 'logoutAll') await L.revokeAll(m.id);
         else if (B.op === 'revoke') { const s = (await L.listSessions(m.id)).find(x => x.sid.slice(0, 8) === String(B.sid)); if (s) await L.revokeSession(m.id, s.sid); }
         else if (B.op === 'limit') { const n = parseInt(B.maxDevices, 10); m.maxDevices = n > 0 ? Math.min(10, n) : undefined; await L.saveAccount(m); }
+        else if (B.op === 'promote') { if (!L.DISPLAY[B.admin]) return json(res, 400, { error: 'Orga inconnu.' }); m.role = 'admin'; m.admin = B.admin; m.status = 'active'; await L.saveAccount(m); await L.syncSessions(m); }
+        else if (B.op === 'demote') { if (m.id.startsWith('adm-')) return json(res, 400, { error: 'Compte orga principal.' }); m.role = 'member'; delete m.admin; await L.saveAccount(m); }
         else if (B.op === 'reset') { await L.revokeAll(m.id); await redis('HDEL', 'evg:members', m.id); await redis('DEL', `evg:fail:${m.id}`, `evg:mdev:${m.id}`); }
         else return json(res, 400, { error: 'Opération inconnue.' });
         await L.logEvent(req, 'admin_' + B.op, { who, target, m: m.id });

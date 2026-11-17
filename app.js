@@ -332,7 +332,7 @@ function route() {
   const orga = location.hash === '#/orga' && ME?.role === 'admin';
   $('main').hidden = orga; document.querySelector('.orgaPage').hidden = !orga; document.querySelector('.bottomNav').hidden = orga;
   EVGSec.page(orga ? 'orga' : 'site');
-  if (!orga) return;
+  if (!orga) { if (adminLoaded) loadAdminBar(); return; }
   scrollTo(0, 0);
   if (!adminLoaded) { adminLoaded = true; const sc = document.createElement('script'); sc.src = 'admin.js'; sc.onload = () => EVGAdmin.start(ME); document.body.appendChild(sc); } else EVGAdmin.refresh();
 }
@@ -393,13 +393,32 @@ function maybeOnboard() {
   ONB.step = 0; $('onb').hidden = false; document.body.classList.add('onbOpen'); onbRender();
 }
 
+// ---------- Barre orga sur la page : valider les comptes sans quitter le site (orgas uniquement) ----------
+async function loadAdminBar() {
+  if (ME.role !== 'admin' || document.hidden) return;
+  let ms, rs;
+  try { [ms, rs] = await Promise.all([api('/api/admin?col=members'), api('/api/admin?col=rsvps')]); } catch { return; }
+  const now = Date.now(), pend = ms.filter(m => m.status === 'pending'), part = ms.filter(m => m.role !== 'admin');
+  const online = ms.filter(m => m.sessions.some(x => now - new Date(x.lastSeen) < 5 * 6e4)).length;
+  const el = $('adminBar'); el.hidden = false;
+  el.innerHTML = `<div class="abHead"><b>🛡️ Mode orga</b>${pend.length ? `<button type="button" class="mini good" id="abAll">✅ Tout valider (${pend.length})</button>` : ''}<a href="#/orga" class="mini">Espace orga →</a></div>
+    <div class="abStats"><span class="${pend.length ? 'hot' : ''}">⏳ ${pend.length} à valider</span><span>👥 ${part.length} comptes</span><span>🟢 ${online} en ligne</span><span>📝 ${rs.length} réponses</span><span>🎉 ${rs.filter(r => r.statut === 'oui').length} viennent</span></div>
+    ${pend.length ? `<div class="abList">${pend.map(m => { const x = m.sessions[0] || {}; return `<div class="abRow"><div><b>${safe(m.prenom)} ${safe(m.nom)}</b><small>${safe([x.label, [x.city, x.country].filter(Boolean).join(', ')].filter(Boolean).join(' · '))} · ${ago(m.createdAt)}</small></div>
+      <button type="button" class="mini good" data-ab="approve|${safe(m.id)}">✅ Valider</button><button type="button" class="mini danger" data-ab="block|${safe(m.id)}">🚷 Refuser</button></div>`; }).join('')}</div>` : ''}`;
+  const act = async (op, id) => { await api('/api/admin?col=members', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ op, id }) }); };
+  el.querySelectorAll('[data-ab]').forEach(b => b.onclick = async () => { const [op, id] = b.dataset.ab.split('|'); if (op === 'block' && !confirm('Refuser et bloquer ce compte ?')) return; b.disabled = true; try { await act(op, id); toast(op === 'approve' ? '✅ Validé' : '🚷 Refusé'); } catch (e) { toast('⚠️ ' + e.message); } loadAdminBar(); });
+  const all = $('abAll'); if (all) all.onclick = async () => { all.disabled = true; for (const m of pend) { try { await act('approve', m.id); } catch {} } toast(`✅ ${pend.length} compte(s) validé(s)`); loadAdminBar(); };
+}
+setInterval(loadAdminBar, 20000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) loadAdminBar(); });
+
 // ---------- Démarrage ----------
 (async () => {
   let s; try { s = await api('/api/auth'); } catch { location.replace('/login'); return; }
   if (s.me.status !== 'active') { location.replace('/login'); return; }
   ME = { ...s.me, sid: s.sid };
   EVGSec.start(ME, s.security);
-  renderAccount(); route();
+  renderAccount(); route(); loadAdminBar();
   try { await loadConfig(); } catch { $('intro').textContent = 'Impossible de charger les infos pour le moment, recharge la page.'; }
   loadActivities().catch(() => { AUTHLOAD = false; renderDeck(); }); loadIdeas();
   await loadMyRsvp(); maybeOnboard();   // 1re connexion : dates, lieu, adresse avant tout

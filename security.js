@@ -2,7 +2,7 @@
 //  Confidentialité : un site web ne peut pas bloquer à 100 % une capture d'écran
 //  (surtout sur téléphone). On rend donc toute fuite inutile et traçable :
 //  filigrane nominatif, floutage dès que l'app quitte l'écran ou qu'un raccourci
-//  de capture est détecté, impression bloquée, journal des tentatives, bouton panique.
+//  de capture est détecté, impression bloquée, journal des tentatives.
 // ============================================================
 window.EVGSec = (() => {
   const $ = id => document.getElementById(id);
@@ -74,26 +74,6 @@ window.EVGSec = (() => {
   function bump() { lastAct = Date.now(); }
   ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(t => window.addEventListener(t, bump, { passive: true }));
   function autolock() { clearInterval(lockT); if (CFG.autoLockMin > 0) lockT = setInterval(() => { if (Date.now() - lastAct > CFG.autoLockMin * 6e4) shield(true); }, 10000); }
-
-  // ---------- Bouton panique : « Elie arrive ! » → fausse page météo ----------
-  function decoy() {
-    const d = $('decoy'), days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'], t = new Date().getDay();
-    d.innerHTML = `<div class="dc"><div class="dcTop"><span>Météo</span><small>Paris, France</small></div>
-      <div class="dcNow"><span class="dcT">7°</span><span>☁️ Nuageux<br><small>Ressenti 4° · Vent 18 km/h</small></span></div>
-      <div class="dcDays">${[0, 1, 2, 3, 4].map(i => `<div><b>${days[(t + i + 6) % 7]}</b><span>${['☁️', '🌧️', '⛅', '☁️', '🌦️'][i]}</span><small>${[7, 5, 8, 6, 9][i]}° / ${[3, 2, 4, 1, 3][i]}°</small></div>`).join('')}</div>
-      <p class="dcFoot">Données fournies à titre indicatif. Maintenir appuyé sur « Météo » pour actualiser.</p></div>`;
-    d.hidden = false; document.body.classList.add('decoyed'); report('panic');
-    let pt; const top = d.querySelector('.dcTop span');
-    const up = () => clearTimeout(pt);
-    top.addEventListener('pointerdown', () => { pt = setTimeout(() => { d.hidden = true; document.body.classList.remove('decoyed'); }, 900); });
-    top.addEventListener('pointerup', up); top.addEventListener('pointerleave', up);
-  }
-  $('panicBtn').addEventListener('click', decoy);
-  // Échap deux fois = panique aussi ; secouer le téléphone aussi (si autorisé)
-  let lastEsc = 0;
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (Date.now() - lastEsc < 600) decoy(); lastEsc = Date.now(); } });
-  let lastShake = 0;
-  window.addEventListener('devicemotion', e => { const a = e.accelerationIncludingGravity; if (!a) return; const f = Math.abs(a.x) + Math.abs(a.y) + Math.abs(a.z); if (f > 45 && Date.now() - lastShake > 2000) { lastShake = Date.now(); decoy(); } });
 
   // ---------- Battement de cœur : dernière activité, page, et déconnexion à distance ----------
   async function ping() {

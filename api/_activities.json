@@ -775,5 +775,443 @@
   "hiver": true,
   "source": "https://jck.nl/en/agenda/walking-tour-jewish-amsterdam",
   "verifie": true
+ },
+ {
+  "id": "rage-room",
+  "nom": "Rage Room : tout casser",
+  "emoji": "💥",
+  "categorie": "Sport & action",
+  "description": "Batte, pied-de-biche, masse : on casse des télés, des assiettes et des imprimantes. Elie détruit symboliquement sa vie de célibataire, le groupe filme au ralenti.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 45
+    }
+   ]
+  },
+  "prixNote": "Prix estimé, sessions de groupe",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=Rage+Room+Amsterdam",
+  "verifie": false
+ },
+ {
+  "id": "paintball-foret",
+  "nom": "Paintball en forêt : tous contre Elie",
+  "emoji": "🔫",
+  "categorie": "Sport & action",
+  "description": "Missions en forêt, 150 billes chacun, et une règle spéciale : Elie porte un gilet orange fluo. Il ne s'en remettra pas.",
+  "duree": "3h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 50
+    }
+   ]
+  },
+  "prixNote": "~45-55 €/pers., souvent mini 8 pers.",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=paintball+Amsterdam+stag+group",
+  "verifie": false
+ },
+ {
+  "id": "stand-de-tir",
+  "nom": "Stand de tir (vraies armes, encadré)",
+  "emoji": "🎯",
+  "categorie": "Sport & action",
+  "description": "Pistolet et carabine avec instructeur, cibles à l'effigie de… non, des cibles normales. Le meilleur tireur choisit le gage d'Elie.",
+  "duree": "1h30",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 95
+    }
+   ]
+  },
+  "prixNote": "70-120 €/pers., Aalsmeer, pièce d'identité obligatoire",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=shooting+range+Aalsmeer+group+experience",
+  "verifie": false
+ },
+ {
+  "id": "kickboxing-pro",
+  "nom": "Kickboxing avec un pro + bain glacé",
+  "emoji": "🥊",
+  "categorie": "Sport & action",
+  "description": "Les Néerlandais sont les rois du kickboxing. Un coach pro nous démonte pendant 1 h, puis tout le monde au bain glacé sur un toit au-dessus de l'IJ.",
+  "duree": "1h30",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 40
+    }
+   ]
+  },
+  "prixNote": "Prix estimé, cours de groupe en dojo à Noord",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=The+Light+Side+gym+Amsterdam+Noord+kickboxing+ice+bath",
+  "verifie": false
+ },
+ {
+  "id": "bain-glace",
+  "nom": "Bain glacé + sauna (méthode Wim Hof)",
+  "emoji": "🧊",
+  "categorie": "Sport & action",
+  "description": "Respiration, puis bain à 2 °C. Elie, médecin, nous explique l'hypothermie pendant qu'il la vit en direct.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 30
+    }
+   ]
+  },
+  "prixNote": "Prix estimé, sessions de 25 min",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=Yskamer+Amsterdam+ice+bath+sauna",
+  "verifie": false
+ },
+ {
+  "id": "basket-fauteuil",
+  "nom": "Basket fauteuil contre une équipe handisport",
+  "emoji": "♿",
+  "categorie": "Sport & action",
+  "description": "On défie une vraie équipe de basket fauteuil. Spoiler : ils vont nous humilier. Elie offre le verre d'après-match à l'équipe gagnante (la leur).",
+  "duree": "2h",
+  "prix": {
+   "type": "group",
+   "prix": 300,
+   "capacite": 20
+  },
+  "prixNote": "Prix estimé : à organiser avec un club handisport",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=rolstoelbasketbal+clinic+bedrijfsuitje+Amsterdam",
+  "verifie": false
+ },
+ {
+  "id": "sumo-gonflable",
+  "nom": "Tournoi de sumo en costumes géants",
+  "emoji": "🤼",
+  "categorie": "Sport & action",
+  "description": "Costumes de sumo gonflables, élimination directe, et Elie affronte tout le monde à la suite. Personne n'en ressort digne.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 30
+    }
+   ]
+  },
+  "prixNote": "Prix estimé, location avec arbitre",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=sumo+worstelen+pakken+huren+Amsterdam",
+  "verifie": false
+ },
+ {
+  "id": "car-smash",
+  "nom": "Démolir une voiture à la masse",
+  "emoji": "🚗",
+  "categorie": "Sport & action",
+  "description": "Une vieille voiture, des masses, des lunettes de protection. On la décore aux couleurs de la vie de célibataire d'Elie, puis on l'achève.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 35
+    }
+   ]
+  },
+  "prixNote": "Prix estimé",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=car+smash+experience+Netherlands+group",
+  "verifie": false
+ },
+ {
+  "id": "vr-combat",
+  "nom": "Combat en réalité virtuelle (free-roam)",
+  "emoji": "🥽",
+  "categorie": "Jeux & défis",
+  "description": "Tout le groupe dans la même arène virtuelle : zombies, braquage ou guerre. Elie meurt en premier, c'est statistique.",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 40
+    }
+   ]
+  },
+  "prixNote": "Prix estimé",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=free+roam+VR+arena+Amsterdam+group",
+  "verifie": false
+ },
+ {
+  "id": "abandon-pyjama",
+  "nom": "L'abandon façon Very Bad Trip",
+  "emoji": "🛌",
+  "categorie": "Jeux & défis",
+  "description": "On lâche Elie en pyjama à Zaandam, en journée, avec 10 € et sans téléphone. Il doit retrouver le groupe. Un pote le suit de loin, au cas où.",
+  "duree": "3h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 0
+    }
+   ]
+  },
+  "prixNote": "Gratuit (le pyjama est fourni)",
+  "hiver": true,
+  "source": "",
+  "verifie": true
+ },
+ {
+  "id": "faux-enlevement",
+  "nom": "Le kidnapping au réveil",
+  "emoji": "🕵️",
+  "categorie": "Jeux & défis",
+  "description": "Cagoules, gilets assortis, van loué, musique de film d'action à fond. On kidnappe Elie au réveil, direction la première activité. Aucun faux uniforme officiel (interdit).",
+  "duree": "1h",
+  "prix": {
+   "type": "group",
+   "prix": 150,
+   "capacite": 20
+  },
+  "prixNote": "Location du van + déguisements",
+  "hiver": true,
+  "source": "",
+  "verifie": true
+ },
+ {
+  "id": "paparazzis",
+  "nom": "Paparazzis aux trousses d'Elie",
+  "emoji": "📸",
+  "categorie": "Insolite & culture",
+  "description": "Trois photographes et un faux garde du corps le suivent dans la ville en criant « ELIE ! ELIE ! » avec des flashs. Les touristes le prennent pour une star.",
+  "duree": "1h",
+  "prix": {
+   "type": "group",
+   "prix": 600,
+   "capacite": 30
+  },
+  "prixNote": "400-900 € le groupe, prix estimé",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=hire+fake+paparazzi+Amsterdam",
+  "verifie": false
+ },
+ {
+  "id": "fanfare",
+  "nom": "Fanfare hollandaise en embuscade",
+  "emoji": "🎺",
+  "categorie": "Insolite & culture",
+  "description": "Un dweilorkest (fanfare de cuivres déguisée) surgit à la gare ou au resto et joue l'hymne du marié. Tradition néerlandaise, effet massif.",
+  "duree": "30 min",
+  "prix": {
+   "type": "group",
+   "prix": 700,
+   "capacite": 30
+  },
+  "prixNote": "500-1000 € le groupe, prix estimé",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=dweilorkest+boeken",
+  "verifie": false
+ },
+ {
+  "id": "helico",
+  "nom": "Hélico au-dessus d'Amsterdam",
+  "emoji": "🚁",
+  "categorie": "Insolite & culture",
+  "description": "20 à 30 minutes au-dessus des canaux, des moulins et de la mer. Elie à l'avant, casque sur la tête, la mâchoire au sol.",
+  "duree": "30 min",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 150
+    }
+   ]
+  },
+  "prixNote": "120-300 €/pers. selon le vol, prix estimé",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=helicopter+rondvlucht+Amsterdam",
+  "verifie": false
+ },
+ {
+  "id": "supercar",
+  "nom": "Supercars sur le circuit de F1 de Zandvoort",
+  "emoji": "🏎️",
+  "categorie": "Sport & action",
+  "description": "Baptême en Ferrari ou Lamborghini sur un vrai circuit de F1. Le plus lent offre la tournée.",
+  "duree": "2h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 180
+    }
+   ]
+  },
+  "prixNote": "150-400 €/pers., dispo hiver à vérifier",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=Circuit+Zandvoort+supercar+experience",
+  "verifie": false
+ },
+ {
+  "id": "grue-faralda",
+  "nom": "Elie dort seul en haut d'une grue",
+  "emoji": "🏗️",
+  "categorie": "Insolite & culture",
+  "description": "Suite dans une ancienne grue portuaire à 50 m, jacuzzi au sommet. On y enferme Elie « pour sa sécurité » pendant que le groupe fait la fête en bas.",
+  "duree": "1 nuit",
+  "prix": {
+   "type": "group",
+   "prix": 600,
+   "capacite": 2
+  },
+  "prixNote": "450-900 € la suite, prix estimé",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=Faralda+Crane+Hotel+Amsterdam",
+  "verifie": false
+ },
+ {
+  "id": "open-mic",
+  "nom": "Open mic : Elie fait du stand-up",
+  "emoji": "🎤",
+  "categorie": "Soirée",
+  "description": "Elie monte sur scène dans un comedy club et fait 5 minutes en anglais sur sa vie de futur marié. Sujets tirés au sort par le groupe.",
+  "duree": "2h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 10
+    }
+   ]
+  },
+  "prixNote": "Entrée + consos, prix estimé",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=comedy+open+mic+Amsterdam+English",
+  "verifie": false
+ },
+ {
+  "id": "poker-villa",
+  "nom": "Tournoi de poker avec croupier à la villa",
+  "emoji": "🃏",
+  "categorie": "Soirée",
+  "description": "Croupier en nœud papillon, jetons, smokings de location. Le perdant porte la tenue de son choix… choisie par Elie.",
+  "duree": "3h",
+  "prix": {
+   "type": "group",
+   "prix": 300,
+   "capacite": 20
+  },
+  "prixNote": "Prix estimé, croupier à domicile",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=poker+dealer+huren+thuis",
+  "verifie": false
+ },
+ {
+  "id": "barbier",
+  "nom": "Barbier old school : rasage au coupe-chou",
+  "emoji": "💈",
+  "categorie": "Insolite & culture",
+  "description": "Serviette chaude, coupe-chou, et une question posée devant tout le monde : la moitié de la barbe d'Elie, ou une tournée générale ?",
+  "duree": "1h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 35
+    }
+   ]
+  },
+  "prixNote": "Prix estimé",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=old+school+barbershop+Amsterdam+straight+razor",
+  "verifie": false
+ },
+ {
+  "id": "diner-noir",
+  "nom": "Dîner dans le noir, servi par des non-voyants",
+  "emoji": "🕶️",
+  "categorie": "Boire & manger",
+  "description": "Dans le noir complet, servis par une équipe de non-voyants qui se déplace mieux que nous. Elie, médecin, doit deviner ce qu'il mange. Pas casher : version boissons ou à négocier.",
+  "duree": "2h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 70
+    }
+   ]
+  },
+  "prixNote": "Prix estimé, cacheroute à voir avec le lieu",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=Ctaste+Amsterdam+dining+in+the+dark",
+  "verifie": false
+ },
+ {
+  "id": "indoor-skydive",
+  "nom": "Chute libre en soufflerie",
+  "emoji": "🪂",
+  "categorie": "Sport & action",
+  "description": "La sensation du saut en parachute sans l'avion. Elie, joues au vent, crie le prénom de sa future à 200 km/h.",
+  "duree": "2h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 75
+    }
+   ]
+  },
+  "prixNote": "Prix estimé, hors d'Amsterdam (route à prévoir)",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=indoor+skydiving+Netherlands",
+  "verifie": false
+ },
+ {
+  "id": "hareng",
+  "nom": "Dégustation de hareng cru au stand",
+  "emoji": "🐟",
+  "categorie": "Boire & manger",
+  "description": "Le rite local : un hareng entier tenu par la queue, tête en arrière, d'une traite. Poisson à écailles, cacheroute du stand à vérifier.",
+  "duree": "20 min",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 5
+    }
+   ]
+  },
+  "prixNote": "Environ 4-6 € le hareng",
+  "hiver": true,
+  "source": "https://www.google.com/search?q=haringhandel+Amsterdam",
+  "verifie": false
  }
 ]
