@@ -11,6 +11,22 @@ async function redis(...cmd) {
   if (j.error) throw new Error(j.error);
   return j.result;
 }
+// Plusieurs commandes Redis en une seule requête
+async function pipeline(cmds) {
+  if (!cmds.length) return [];
+  const r = await fetch(process.env.KV_REST_API_URL + '/pipeline', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(cmds),
+  });
+  const j = await r.json();
+  return j.map(x => { if (x.error) throw new Error(x.error); return x.result; });
+}
+function flatToItems(flat) {
+  const out = [];
+  for (let i = 0; i < (flat || []).length; i += 2) { try { out.push(JSON.parse(flat[i + 1])); } catch {} }
+  return out;
+}
 async function hgetall(key) {
   const flat = (await redis('HGETALL', key)) || [];
   const out = [];
@@ -65,6 +81,44 @@ function getUser(req) {
   } catch { return null; }
 }
 
+// ---------- Comptes participants (prénom + nom + code perso) ----------
+const memberId = (prenom, nom) => crypto.createHash('sha1').update(norm(prenom) + '|' + norm(nom)).digest('hex').slice(0, 16);
+function hashPin(pin) { const salt = crypto.randomBytes(16).toString('hex'); return salt + ':' + crypto.scryptSync(String(pin), salt, 32).toString('hex'); }
+function checkPin(stored, pin) {
+  const [salt, hash] = String(stored || ':').split(':');
+  const test = crypto.scryptSync(String(pin), salt || 'x', 32), good = Buffer.from(hash || '', 'hex');
+  return good.length === test.length && crypto.timingSafeEqual(good, test);
+}
+function readCookie(req, name) {
+  const c = (req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith(name + '='));
+  return c ? c.slice(name.length + 1) : null;
+}
+function memberCookie(id, req) {
+  const p = Buffer.from(JSON.stringify({ m: id, exp: Date.now() + 90 * 864e5 })).toString('base64url');
+  const secure = (req.headers['x-forwarded-proto'] || '').includes('https') ? '; Secure' : '';
+  return `evg_member=${p}.${sign(p)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${90 * 86400}${secure}`;
+}
+const clearMemberCookie = () => 'evg_member=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0';
+// Renvoie {id, prenom, nom} si la session membre est valide ET que le compte existe encore (un reset l'invalide)
+async function getMember(req) {
+  if (!secret()) return null;
+  const c = readCookie(req, 'evg_member'); if (!c) return null;
+  const [p, sig] = c.split('.'); if (!p || !sig) return null;
+  const expect = sign(p);
+  if (sig.length !== expect.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect))) return null;
+  try {
+    const d = JSON.parse(Buffer.from(p, 'base64url').toString()); if (!(d.exp > Date.now()) || !d.m) return null;
+    const raw = await redis('HGET', 'evg:members', d.m); if (!raw) return null;
+    const m = JSON.parse(raw); return { id: m.id, prenom: m.prenom, nom: m.nom };
+  } catch { return null; }
+}
+// Code d'invitation (contenu dans le lien partagé) : généré une fois, régénérable depuis l'admin
+async function inviteCode() {
+  let c = await redis('GET', 'evg:invite');
+  if (!c) { c = crypto.randomBytes(4).toString('hex'); await redis('SET', 'evg:invite', c, 'NX'); c = await redis('GET', 'evg:invite'); }
+  return c;
+}
+
 // ---------- Config par défaut (modifiable depuis l'admin) ----------
 const DEFAULT_CONFIG = {
   lieu: 'Amsterdam 🇳🇱',
@@ -109,4 +163,4 @@ function body(req) {
 const isJson = req => /application\/json/i.test(req.headers['content-type'] || '');
 const str = (v, max = 300) => String(v ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, max);
 
-module.exports = { redis, hgetall, json, ip, rateLimit, checkPassword, makeCookie, clearCookie, getUser, norm, DISPLAY, getConfig, DEFAULT_CONFIG, str, seedActivities, body, isJson };
+module.exports = { redis, pipeline, flatToItems, memberId, hashPin, checkPin, readCookie, memberCookie, clearMemberCookie, getMember, inviteCode, hgetall, json, ip, rateLimit, checkPassword, makeCookie, clearCookie, getUser, norm, DISPLAY, getConfig, DEFAULT_CONFIG, str, seedActivities, body, isJson };

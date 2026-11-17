@@ -20,15 +20,37 @@ $('heroPhoto').innerHTML = `<div class="frame">${photo({fichier:S.photoPrincipal
 $('gallery').innerHTML = S.photos.map(p=>`<figure class="polaroid"><div class="img">${photo(p)}</div><figcaption>${safe(p.legende)}</figcaption></figure>`).join('');
 $('diagnostic').innerHTML = S.diagnostic.map(([a,b])=>`<tr><th scope="row">${safe(a)}</th><td>${safe(b)}</td></tr>`).join('');
 
-// ---------- Identité partagée (formulaire + votes) ----------
-const me = store.get('evg_me', { prenom: '', nom: '' });
-for (const c of ['prenom', 'nom']) {
-  const inputs = [...document.querySelectorAll('.idn-' + c)];
-  inputs.forEach(i => { i.value = me[c] || '';
-    i.addEventListener('input', () => { me[c] = i.value; store.set('evg_me', me); inputs.forEach(o => { if (o !== i) o.value = i.value; }); if (typeof renderDeck === 'function') renderDeck(); });
-    // autre personne : on oublie tout de suite les votes de la précédente (sinon un clic rapide les "annule")
-    i.addEventListener('change', () => { MINE = {}; if (ACTS.length) renderActivities(); if (me.prenom && me.nom) { loadActivities().catch(() => {}); if (i.closest('#activites') && c === 'nom' && MODE === 'swipe') setTimeout(() => document.querySelector('.modeSwitch').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); } }); });
+// ---------- Compte participant (prénom + nom + code perso) ----------
+let ME = null;
+// le lien d'invitation contient ?c=CODE : on le garde (il permet de créer un compte) puis on nettoie l'adresse
+const INV = (() => { try { const u = new URL(location.href), c = u.searchParams.get('c'); if (c) { localStorage.setItem('evg_invite', c); u.searchParams.delete('c'); history.replaceState(null, '', u.pathname + u.search + u.hash); } return localStorage.getItem('evg_invite') || ''; } catch { return ''; } })();
+async function loadMe() { try { ME = (await api('/api/member')).member; } catch { ME = null; } afterAuth(); }
+function renderAccount() {
+  $('accountOut').hidden = !!ME; $('accountIn').hidden = !ME; $('compte').classList.toggle('slim', !!ME);
+  if (ME) $('whoName').textContent = ME.prenom;
+  $('regBtn').disabled = !INV; $('noInvite').hidden = !!INV;
+  document.querySelectorAll('.needAccount').forEach(el => el.hidden = !ME);
+  document.querySelectorAll('.gateAccount').forEach(el => el.hidden = !!ME);
+  $('rsvpWho').textContent = ME ? `Tu réponds en tant que ${ME.prenom} ${ME.nom}` : '';
 }
+// à chaque connexion / déconnexion : on recharge tout ce qui dépend de la personne
+let AUTHLOAD = false;  // vrai entre une connexion et le chargement de MES votes (évite d'afficher des cartes déjà votées)
+function afterAuth() { renderAccount(); MINE = {}; HIST.length = 0; AUTHLOAD = !!ME; renderDeck(); loadActivities().catch(() => { AUTHLOAD = false; renderDeck(); }); loadIdeas(); loadMyRsvp(); }
+async function accountAction(action) {
+  const msg = $('accMsg'); msg.className = 'formMsg'; msg.textContent = '…';
+  try {
+    const r = await postJSON('/api/member', { action, prenom: $('accPrenom').value, nom: $('accNom').value, pin: $('accPin').value, invite: INV });
+    ME = r.member; $('accPin').value = ''; msg.textContent = ''; afterAuth();
+    toast(action === 'register' ? `🎉 Bienvenue ${ME.prenom} ! Compte créé, retiens ton code.` : `👋 Content de te revoir ${ME.prenom} !`);
+  } catch (e) { msg.className = 'formMsg err'; msg.textContent = '⚠️ ' + e.message; }
+}
+$('accountForm').addEventListener('submit', e => { e.preventDefault(); accountAction('login'); });
+$('regBtn').onclick = () => { if (!$('accountForm').reportValidity()) return; accountAction('register'); };
+$('logoutBtn').onclick = async () => { try { await postJSON('/api/member', { action: 'logout' }); } catch {} ME = null; afterAuth(); toast('À bientôt 👋'); };
+$('changePin').onclick = async () => {
+  const old = prompt('Ton code actuel :'); if (old === null) return; const nw = prompt('Ton nouveau code (4 caractères minimum) :'); if (nw === null) return;
+  try { await postJSON('/api/member', { action: 'changepin', pin: old, newPin: nw }); toast('✅ Code modifié.'); } catch (e) { toast('⚠️ ' + e.message); }
+};
 
 // ---------- Config (dates, lieu, budget…) ----------
 let CFG = null, VENUS = [], cdTimer;
@@ -44,7 +66,7 @@ async function loadConfig() {
     $('formDates').dataset.ready = 1; $('formDates').dataset.sig = CFG.dateOptions.map(o => o.id + o.label).join('|');
     $('formDates').innerHTML = CFG.dateOptions.map(o => `<div class="dateRow" role="radiogroup" aria-label="${safe(o.label)}"><b>${safe(o.label)}</b><div class="seg small">
       ${[['oui','✅ Dispo'],['peut-etre','🤷 Peut-être'],['non','❌ Non']].map(([v,l]) => `<label><input type="radio" name="d_${safe(o.id)}" value="${v}"><span>${l}</span></label>`).join('')}</div></div>`).join('');
-    syncRequired(); prefillForm();
+    syncRequired(); loadMyRsvp();
   }
   $('programme').innerHTML = CFG.programme.map(day => `<div class="day"><b>${safe(day.jour)}</b><h3>${safe(day.titre)}</h3><ul>${day.items.map(i => `<li>${safe(i)}</li>`).join('')}</ul></div>`).join('');
   $('participants').innerHTML = VENUS.length ? VENUS.map(n => `<div class="person"><b>${safe(n)}</b><span class="badge">confirmé ✅</span></div>`).join('') : '<p class="hint">Aucun complice pour l\'instant. Elie se croit en sécurité.</p>';
@@ -54,6 +76,7 @@ async function loadConfig() {
   $('deadlineTxt').textContent = !CFG.dateFinale && CFG.deadline && !closed ? `(réponse attendue avant le ${fmtDate(CFG.deadline)})` : '';
   clearInterval(cdTimer);
   if (closed) $('countdown').innerHTML = ''; else startCountdown(new Date(CFG.dateFinale || (CFG.deadline + 'T23:59')).getTime());
+  EXTRA = d.defisExtra || []; buildDefis(); renderDefis();
 }
 // budget hors "activités" (remplacé par l'estimation du podium) pour le total du séjour
 const budgetTotal = () => CFG.budget.reduce((a, b) => a + b.montant, 0);
@@ -73,12 +96,13 @@ function syncRequired() { // si "je ne peux pas" : on masque et on ne demande pl
   ['lieuOk', 'budget'].forEach(n => { const first = form.querySelector(`input[name="${n}"]`); if (first) first.required = !non; });
 }
 form.addEventListener('change', e => { if (e.target.name === 'statut') syncRequired(); });
-function prefillForm() { // retrouve la dernière réponse envoyée depuis cet appareil
-  const last = store.get('evg_form', null); if (!last) return;
-  for (const [k, v] of Object.entries(last)) {
-    const els = form.querySelectorAll(`[name="${k}"]`); if (!els.length) continue;
-    if (els[0].type === 'radio') els.forEach(el => el.checked = el.value === v); else if (!els[0].classList.contains('idn-prenom') && !els[0].classList.contains('idn-nom')) els[0].value = v;
-  }
+async function loadMyRsvp() {   // retrouve MA dernière réponse (compte requis)
+  if (!ME || !CFG) return;
+  let r = null; try { r = (await api('/api/rsvp')).rsvp; } catch {} if (!r) return;
+  const setRadio = (n, v) => form.querySelectorAll(`input[name="${n}"]`).forEach(el => el.checked = el.value === v);
+  setRadio('statut', r.statut); setRadio('lieuOk', r.lieuOk); setRadio('budget', r.budget);
+  CFG.dateOptions.forEach(o => setRadio('d_' + o.id, r.dispos?.[o.id]));
+  ['contact', 'lieuIdee', 'budgetMax', 'depart', 'transport', 'regime', 'idees', 'commentaire'].forEach(k => { if (form[k] && r[k] !== undefined && r[k] !== 0) form[k].value = r[k]; });
   syncRequired();
 }
 form.addEventListener('submit', async e => {
@@ -88,7 +112,6 @@ form.addEventListener('submit', async e => {
   const btn = $('rsvpBtn'), msg = $('rsvpMsg'); btn.disabled = true; msg.className = 'formMsg'; msg.textContent = 'Envoi…';
   try {
     const r = await postJSON('/api/rsvp', body);
-    store.set('evg_form', Object.fromEntries([...f.entries()]));
     msg.className = 'formMsg ok'; msg.textContent = r.modifie ? '✅ Réponse mise à jour, merci !' : '✅ Réponse enregistrée. Elie ne se doute de rien, bien joué 🕵️';
     $('goVote').hidden = false; loadConfig().catch(() => {});
   } catch (err) { msg.className = 'formMsg err'; msg.textContent = '⚠️ ' + err.message; }
@@ -100,10 +123,9 @@ let ACTS = [], MINE = {}, ACFG = {}, NB = 8, NBVOTANTS = 0, CAT = 'Toutes', nbTo
 let seq = 0, pending = 0, queue = Promise.resolve();
 async function loadActivities() {
   const mine = ++seq;
-  const q = me.prenom && me.nom ? `?prenom=${encodeURIComponent(me.prenom)}&nom=${encodeURIComponent(me.nom)}` : '';
-  const d = await api('/api/activities' + q);
+  const d = await api('/api/activities');
   if (mine !== seq || pending) return; // réponse périmée ou votes en cours d'envoi : on ne touche à rien
-  ACTS = d.activities; MINE = d.mesVotes || {}; ACFG = d.config; NBVOTANTS = d.nbVotants;
+  AUTHLOAD = false; ACTS = d.activities; MINE = d.mesVotes || {}; ACFG = d.config; NBVOTANTS = d.nbVotants;
   if (!nbTouched) NB = Math.max(4, d.nbParticipants);
   renderActivities();
 }
@@ -157,7 +179,7 @@ function renderActivities() {
   renderDeck(); renderNav();
 }
 async function vote(id, v) {
-  if (!me.prenom.trim() || !me.nom.trim()) { toast('Entre ton prénom et ton nom (en haut de la section) avant de voter 🙂'); document.querySelector(`#activites .idn-${me.prenom.trim() ? 'nom' : 'prenom'}`).focus(); return; }
+  if (!ME) { toast('Connecte-toi pour voter 🙂'); location.hash = '#compte'; return; }
   const a = ACTS.find(x => x.id === id), prev = MINE[id], next = prev === v ? null : v;
   // mise à jour immédiate (optimiste), annulée si le serveur refuse
   if (a.counts) { if (prev) a.counts[prev]--; if (next) a.counts[next]++; }
@@ -165,7 +187,7 @@ async function vote(id, v) {
   renderActivities();
   // envois l'un après l'autre (évite que deux votes rapides s'écrasent), rechargement une fois tout envoyé
   pending++;
-  queue = queue.then(() => postJSON('/api/activities', { prenom: me.prenom, nom: me.nom, votes: { [id]: next } }))
+  queue = queue.then(() => postJSON('/api/activities', { votes: { [id]: next } }))
     .catch(e => toast('⚠️ ' + e.message))
     .finally(() => { if (--pending === 0) loadActivities().catch(() => {}); });
 }
@@ -193,12 +215,12 @@ const cardHTML = (a) => `<div class="scard" data-id="${safe(a.id)}">
   <div class="sprice"><b>${euro(P.pp(a, NB))}</b>/pers. <small>à ${NB} personnes</small><small>${safe(P.bareme(a))}${a.verifie === false ? ' · prix estimé' : ''}${okUrl(a.source) ? ` · <a href="${safe(okUrl(a.source))}" target="_blank" rel="noopener noreferrer">infos ↗</a>` : ''}</small></div></div>`;
 function renderDeck() {
   const el = $('deck'); if (!el || DRAG || FLYING) return;
-  if (!ACTS.length) { el.innerHTML = '<div class="scard gate"><p>Chargement des activités…</p></div>'; return; }
+  if (!ACTS.length || AUTHLOAD) { el.innerHTML = '<div class="scard gate"><p>Chargement des activités…</p></div>'; return; }
   const left = remaining(), n = left.length;
   $('btnUndo').disabled = !HIST.length;
-  const off = !(me.prenom.trim() && me.nom.trim()) || !n;
+  const off = !ME || !n;
   ['btnNo', 'btnYes', 'btnSkip'].forEach(i => $(i).disabled = off);
-  if (!(me.prenom.trim() && me.nom.trim())) { el.innerHTML = '<div class="scard gate"><div class="sem">👆</div><h3>Qui es-tu, soldat ?</h3><p>Entre ton <b>prénom</b> et ton <b>nom</b> juste au-dessus pour commencer à voter.</p></div>'; return; }
+  if (!ME) { el.innerHTML = '<div class="scard gate"><div class="sem">🔐</div><h3>Qui es-tu, soldat ?</h3><p>Connecte-toi (ou crée ton compte) pour commencer à voter.</p><a class="btn small" href="#compte">Mon compte</a></div>'; return; }
   if (!n) { el.innerHTML = `<div class="scard gate"><div class="sem">🎉</div><h3>Tu as tout voté. Elie n'a aucune chance 😈</h3><p>${ACTS.filter(a => MINE[a.id] === 'oui').length} 😍 · ${ACTS.filter(a => MINE[a.id] === 'non').length} 🙅</p><a class="btn small" href="#podium">Voir le podium 🏆</a> <button type="button" class="btn small ghost" id="seeList">Revoir mes votes</button></div>`; $('seeList').onclick = () => setMode('liste'); return; }
   el.innerHTML = (n > 2 ? `<div class="scard back2"></div>` : '') + (n > 1 ? `<div class="scard back1"></div>` : '') + cardHTML(left[0]);
   attachDrag(el.querySelector('.scard[data-id]'));
@@ -216,7 +238,7 @@ function attachDrag(c) {
 // vote + animation de sortie de la carte
 function decide(c, v) {
   const id = c.dataset.id; if (FLYING) return;
-  if (!(me.prenom.trim() && me.nom.trim())) { toast('Entre ton prénom et ton nom pour voter 🙂'); return; }
+  if (!ME) { toast('Connecte-toi pour voter 🙂'); return; }
   FLYING = true; const dir = v === 'oui' ? 1 : -1;
   c.style.transition = 'transform .28s ease-in, opacity .28s'; c.style.transform = `translate(${dir * innerWidth * 1.1}px, -30px) rotate(${dir * 28}deg)`; c.style.opacity = '0';
   c.querySelector(v === 'oui' ? '.stampR' : '.stampL').style.opacity = 1;
@@ -231,36 +253,91 @@ $('btnUndo').onclick = () => { const h = HIST.pop(); if (!h) return; DECK = [h.i
 $('deck').addEventListener('keydown', e => { const c = topCard(); if (!c) return; if (e.key === 'ArrowRight') { e.preventDefault(); decide(c, 'oui'); } else if (e.key === 'ArrowLeft') { e.preventDefault(); decide(c, 'non'); } });
 setMode(MODE);
 
-// ---------- Défis du docteur ----------
+// ---------- Défis du docteur (data.js + défis ajoutés par les orgas) ----------
 const LVL = { 1: ['🌶️', 1], 2: ['🌶️🌶️', 2], 3: ['🌶️🌶️🌶️', 3], 4: ['💀', 5], g: ['👥', 3] };
-let DONE = new Set(store.get('evg_defis', [])), DLVL = 'tous', DPICK = null;
-const defiPts = i => LVL[S.defis[i].n][1];
+let EXTRA = [], DEFIS = [], DONE = new Set(store.get('evg_defis', []).map(k => typeof k === 'number' ? 's' + k : k)), DLVL = 'tous', DPICK = null;
+function buildDefis() { DEFIS = [...S.defis.map((d, i) => ({ k: 's' + i, n: d.n, t: d.t })), ...EXTRA.map(d => ({ k: 'x' + d.id, n: d.n, t: d.t }))].filter(d => LVL[d.n]); }
+const getD = k => DEFIS.find(d => d.k === k);
+const saveDone = () => store.set('evg_defis', [...DONE]);
 function renderDefis() {
-  const pts = [...DONE].reduce((a, i) => a + (S.defis[i] ? defiPts(i) : 0), 0), max = S.defis.reduce((a, d) => a + LVL[d.n][1], 0);
-  $('defiScore').textContent = `${pts} / ${max} pts · ${DONE.size}/${S.defis.length} défis`;
+  const ok = [...DONE].filter(k => getD(k)), pts = ok.reduce((a, k) => a + LVL[getD(k).n][1], 0), max = DEFIS.reduce((a, d) => a + LVL[d.n][1], 0);
+  $('defiScore').textContent = `${pts} / ${max} pts · ${ok.length}/${DEFIS.length} défis`;
   const lv = [['tous', 'Tous'], ['1', '🌶️'], ['2', '🌶️🌶️'], ['3', '🌶️🌶️🌶️'], ['4', '💀 Hardcore'], ['g', '👥 Groupe']];
   $('defiFilter').innerHTML = lv.map(([k, l]) => `<button type="button" class="chipBtn ${k === DLVL ? 'on' : ''}" aria-pressed="${k === DLVL}" data-k="${k}">${l}</button>`).join('');
   $('defiFilter').querySelectorAll('button').forEach(b => b.onclick = () => { DLVL = b.dataset.k; renderDefis(); });
-  $('defiList').innerHTML = S.defis.map((d, i) => ({ d, i })).filter(({ d }) => DLVL === 'tous' || String(d.n) === DLVL)
-    .map(({ d, i }) => `<li class="${DONE.has(i) ? 'done' : ''}"><label><input type="checkbox" data-i="${i}" ${DONE.has(i) ? 'checked' : ''}><span class="lv">${LVL[d.n][0]}</span><span class="tx">${safe(d.t)}</span></label></li>`).join('');
-  $('defiList').querySelectorAll('input').forEach(c => c.onchange = () => { c.checked ? DONE.add(+c.dataset.i) : DONE.delete(+c.dataset.i); store.set('evg_defis', [...DONE]); if (DPICK === +c.dataset.i && c.checked) DPICK = null; renderDefis(); drawCard(); });
+  $('defiList').innerHTML = DEFIS.filter(d => DLVL === 'tous' || String(d.n) === DLVL)
+    .map(d => `<li class="${DONE.has(d.k) ? 'done' : ''}"><label><input type="checkbox" data-k="${safe(d.k)}" ${DONE.has(d.k) ? 'checked' : ''}><span class="lv">${LVL[d.n][0]}</span><span class="tx">${safe(d.t)}</span></label></li>`).join('');
+  $('defiList').querySelectorAll('input').forEach(c => c.onchange = () => { c.checked ? DONE.add(c.dataset.k) : DONE.delete(c.dataset.k); saveDone(); if (DPICK === c.dataset.k && c.checked) DPICK = null; renderDefis(); drawCard(); });
 }
 function drawCard() {
-  const c = $('defiCard'); if (DPICK === null) { c.hidden = true; return; }
-  const d = S.defis[DPICK]; c.hidden = false;
-  c.innerHTML = `<span class="lv">${LVL[d.n][0]}</span><p>${safe(d.t)}</p><div class="row2c"><button type="button" class="btn small" id="dOk">✅ Fait ! (+${LVL[d.n][1]} pt${LVL[d.n][1] > 1 ? 's' : ''})</button><button type="button" class="btn small ghost" id="dNext">🔁 Autre défi</button></div>`;
-  $('dOk').onclick = () => { DONE.add(DPICK); store.set('evg_defis', [...DONE]); DPICK = null; renderDefis(); drawCard(); toast('🔥 Bien joué ! Pense à la preuve photo.'); };
+  const c = $('defiCard'); if (DPICK === null || !getD(DPICK)) { if (!c.dataset.msg) c.hidden = true; return; }
+  const d = getD(DPICK), p = LVL[d.n][1]; c.hidden = false; c.dataset.msg = '';
+  c.innerHTML = `<span class="lv">${LVL[d.n][0]}</span><p>${safe(d.t)}</p><div class="row2c"><button type="button" class="btn small" id="dOk">✅ Fait ! (+${p} pt${p > 1 ? 's' : ''})</button><button type="button" class="btn small ghost" id="dNext">🔁 Autre défi</button></div>`;
+  $('dOk').onclick = () => { DONE.add(DPICK); saveDone(); DPICK = null; renderDefis(); drawCard(); toast('🔥 Bien joué ! Pense à la preuve photo.'); };
   $('dNext').onclick = pickDefi;
 }
 function pickDefi() {
-  const left = S.defis.map((d, i) => i).filter(i => !DONE.has(i) && (DLVL === 'tous' || String(S.defis[i].n) === DLVL));
-  if (!left.length) { DPICK = null; $('defiCard').hidden = false; $('defiCard').innerHTML = '<p>🏆 Tous les défis de cette catégorie sont faits. Elie est brisé.</p>'; return; }
+  const left = DEFIS.filter(d => !DONE.has(d.k) && (DLVL === 'tous' || String(d.n) === DLVL)).map(d => d.k);
+  if (!left.length) { DPICK = null; $('defiCard').hidden = false; $('defiCard').dataset.msg = '1'; $('defiCard').innerHTML = '<p>🏆 Tous les défis de cette catégorie sont faits. Elie est brisé.</p>'; return; }
   let n; do { n = left[Math.random() * left.length | 0]; } while (left.length > 1 && n === DPICK);
   DPICK = n; drawCard(); $('defiCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 $('randDefi').onclick = pickDefi;
-$('defiReset').onclick = () => { if (confirm('Remettre tous les défis à zéro sur cet appareil ?')) { DONE = new Set(); store.set('evg_defis', []); DPICK = null; renderDefis(); drawCard(); } };
-renderDefis();
+$('defiReset').onclick = () => { if (confirm('Remettre tous les défis à zéro sur cet appareil ?')) { DONE = new Set(); saveDone(); DPICK = null; $('defiCard').dataset.msg = ''; renderDefis(); drawCard(); } };
+buildDefis(); renderDefis();
 
-loadConfig().catch(() => { $('intro').textContent = 'Impossible de charger les infos pour le moment, recharge la page.'; });
-loadActivities().catch(() => { $('actGrid').innerHTML = '<p class="hint">Activités indisponibles pour le moment, recharge la page.</p>'; });
+// ---------- Idées des participants : proposer, liker, commenter ----------
+let IDEAS = [], ICATS = [], ISORT = 'top', ICAT = 'Toutes', OPENC = new Set(), iq = Promise.resolve();
+async function loadIdeas() {
+  try { const d = await api('/api/ideas'); IDEAS = d.ideas; ICATS = d.categories; } catch { IDEAS = IDEAS || []; }
+  renderIdeas();
+}
+const ago = iso => { const m = Math.max(0, (Date.now() - new Date(iso)) / 6e4 | 0); return m < 1 ? "à l'instant" : m < 60 ? `il y a ${m} min` : m < 1440 ? `il y a ${m / 60 | 0} h` : `il y a ${m / 1440 | 0} j`; };
+function renderIdeas() {
+  if (ICATS.length && !$('iCat').options.length) $('iCat').innerHTML = ICATS.map(c => `<option>${safe(c)}</option>`).join('');
+  const cats = ['Toutes', ...new Set(IDEAS.map(i => i.categorie))];
+  if (!cats.includes(ICAT)) ICAT = 'Toutes';
+  $('iCatFilter').innerHTML = cats.length > 2 ? cats.map(c => `<button type="button" class="chipBtn ${c === ICAT ? 'on' : ''}" aria-pressed="${c === ICAT}" data-c="${safe(c)}">${safe(c)}</button>`).join('') : '';
+  $('iCatFilter').querySelectorAll('button').forEach(b => b.onclick = () => { ICAT = b.dataset.c; renderIdeas(); });
+  document.querySelectorAll('.sortSwitch button').forEach(b => { b.classList.toggle('on', b.dataset.sort === ISORT); b.setAttribute('aria-pressed', b.dataset.sort === ISORT); });
+  const list = IDEAS.filter(i => ICAT === 'Toutes' || i.categorie === ICAT)
+    .sort((a, b) => ISORT === 'new' ? b.createdAt.localeCompare(a.createdAt) : (b.likes - a.likes) || b.createdAt.localeCompare(a.createdAt));
+  $('ideaList').innerHTML = list.length ? list.map(i => `<article class="idea ${safe(i.statut)}" data-id="${safe(i.id)}">
+    <div class="ihead"><h4>${safe(i.titre)}</h4><span class="cat">${safe(i.categorie)}${i.prix ? ' · ≈ ' + euro(i.prix) + '/pers.' : ''}</span></div>
+    ${i.statut === 'retenue' ? '<span class="badgeOk">✅ Retenue par les orgas</span>' : i.statut === 'refusee' ? '<span class="badgeNo">⛔ Pas retenue</span>' : ''}
+    ${i.description ? `<p>${safe(i.description)}</p>` : ''}${i.note ? `<p class="onote">💬 Orgas : ${safe(i.note)}</p>` : ''}
+    <div class="imeta">par <b>${safe(i.auteur)}</b> · ${ago(i.createdAt)}${okUrl(i.lien) ? ` · <a href="${safe(okUrl(i.lien))}" target="_blank" rel="noopener noreferrer">lien ↗</a>` : ''}</div>
+    <div class="iact"><button type="button" class="likeBtn ${i.jaime ? 'on' : ''}" data-like="${safe(i.id)}" aria-pressed="${i.jaime}" aria-label="J'aime cette idée">${i.jaime ? '❤️' : '🤍'} <b>${i.likes}</b></button>
+      <button type="button" class="comBtn" data-com="${safe(i.id)}" aria-expanded="${OPENC.has(i.id)}">💬 <b>${i.comments.length}</b></button>${i.mine ? `<button type="button" class="delBtn" data-del="${safe(i.id)}" aria-label="Supprimer mon idée">🗑</button>` : ''}</div>
+    ${OPENC.has(i.id) ? `<div class="comments">${i.comments.map(c => `<div class="com"><b>${safe(c.auteur)}</b> <small>${ago(c.createdAt)}</small>${c.mine ? ` <button type="button" class="delBtn tiny" data-dc="${safe(i.id)}|${safe(c.id)}" aria-label="Supprimer mon commentaire">✕</button>` : ''}<br>${safe(c.texte)}</div>`).join('') || '<p class="hint">Aucun commentaire. Lâche-toi.</p>'}
+      ${ME ? `<form class="comForm" data-cf="${safe(i.id)}"><input maxlength="300" placeholder="Ton commentaire…" aria-label="Ton commentaire" required><button class="btn small" type="submit">Envoyer</button></form>` : '<p class="hint"><a href="#compte">Connecte-toi</a> pour commenter.</p>'}</div>` : ''}
+  </article>`).join('') : '<p class="hint">Aucune idée pour le moment. Soyez les premiers à proposer une horreur 😈</p>';
+  const L = (sel, fn) => $('ideaList').querySelectorAll(sel).forEach(fn);
+  L('[data-like]', b => b.onclick = () => likeIdea(b.dataset.like));
+  L('[data-com]', b => b.onclick = () => { OPENC.has(b.dataset.com) ? OPENC.delete(b.dataset.com) : OPENC.add(b.dataset.com); renderIdeas(); });
+  L('[data-del]', b => b.onclick = () => { if (confirm('Supprimer ton idée ?')) ideaAction({ action: 'delete', id: b.dataset.del }); });
+  L('[data-dc]', b => b.onclick = () => { const [id, cid] = b.dataset.dc.split('|'); ideaAction({ action: 'delcomment', id, cid }); });
+  L('[data-cf]', f => f.onsubmit = e => { e.preventDefault(); const inp = f.querySelector('input'); ideaAction({ action: 'comment', id: f.dataset.cf, texte: inp.value }); inp.value = ''; });
+}
+// actions envoyées l'une après l'autre ; on recharge la liste une fois tout envoyé
+function ideaAction(body) {
+  iq = iq.then(() => postJSON('/api/ideas', body)).catch(e => toast('⚠️ ' + e.message)).then(() => loadIdeas());
+}
+function likeIdea(id) {
+  if (!ME) { toast('Connecte-toi pour liker 🙂'); location.hash = '#compte'; return; }
+  const i = IDEAS.find(x => x.id === id); if (!i) return;
+  i.jaime = !i.jaime; i.likes += i.jaime ? 1 : -1; renderIdeas();            // instantané
+  iq = iq.then(() => postJSON('/api/ideas', { action: 'like', id, like: i.jaime })).catch(e => toast('⚠️ ' + e.message)).then(() => loadIdeas());
+}
+document.querySelectorAll('.sortSwitch button').forEach(b => b.onclick = () => { ISORT = b.dataset.sort; renderIdeas(); });
+$('ideaForm').addEventListener('submit', async e => {
+  e.preventDefault(); const btn = $('iBtn'), msg = $('iMsg'); btn.disabled = true; msg.className = 'formMsg'; msg.textContent = 'Envoi…';
+  try {
+    await postJSON('/api/ideas', { action: 'create', titre: $('iTitre').value, description: $('iDesc').value, categorie: $('iCat').value, prix: $('iPrix').value, lien: $('iLien').value });
+    $('ideaForm').reset(); msg.className = 'formMsg ok'; msg.textContent = '✅ Idée envoyée, qu\'elle soit likée !'; ISORT = 'new'; await loadIdeas();
+  } catch (err) { msg.className = 'formMsg err'; msg.textContent = '⚠️ ' + err.message; }
+  btn.disabled = false;
+});
+
+// ---------- Démarrage : config d'abord, puis qui suis-je (qui charge votes, réponse et idées) ----------
+loadConfig().catch(() => { $('intro').textContent = 'Impossible de charger les infos pour le moment, recharge la page.'; }).then(loadMe);

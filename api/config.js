@@ -5,6 +5,7 @@ module.exports = async (req, res) => {
     const cfg = await getConfig();
     const rsvps = await hgetall('evg:rsvps');
     const venus = rsvps.filter(r => r.statut === 'oui').map(r => str(r.prenom, 40));
-    json(res, 200, { config: cfg, venus, nbReponses: rsvps.length });
+    const defisExtra = (await hgetall('evg:defis')).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map(d => ({ id: d.id, n: d.n, t: d.t }));
+    json(res, 200, { config: cfg, venus, nbReponses: rsvps.length, defisExtra });
   } catch (e) { json(res, 500, { error: 'Erreur serveur' }); }
 };

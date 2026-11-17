@@ -3,7 +3,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const euro = n => (Math.round(n * 10) / 10).toLocaleString('fr-FR') + ' €';
 const ADMINS = { david: 'David', alon: 'Alon', raphael: 'Raphaël' };
 let ME = null, TAB = 'reponses', CACHE = {};
-const TABS = [['reponses','📥 Réponses'],['activites','🎯 Activités'],['idees','💡 Idées'],['taches','✅ Tâches'],['notes','📝 Notes'],['reglages','⚙️ Réglages']];
+const TABS = [['reponses','📥 Réponses'],['activites','🎯 Activités'],['propositions','📬 Propositions'],['membres','👥 Membres'],['idees','🔒 Idées orga'],['taches','✅ Tâches'],['notes','📝 Notes'],['reglages','⚙️ Réglages']];
 
 async function api(method, col, body, id) {
   const r = await fetch(`/api/admin?col=${col}${id ? '&id=' + encodeURIComponent(id) : ''}`, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
@@ -34,7 +34,7 @@ async function start() {
 async function render() {
   $('tabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === TAB));
   $('view').innerHTML = '<p>Chargement…</p>';
-  try { await ({ reponses, activites, idees, taches, notes, reglages })[TAB](); } catch (e) { if (e.message !== 'Non connecté') $('view').innerHTML = `<p class="formMsg err">⚠️ ${esc(e.message)}</p>`; }
+  try { await ({ reponses, activites, propositions, membres, idees, taches, notes, reglages })[TAB](); } catch (e) { if (e.message !== 'Non connecté') $('view').innerHTML = `<p class="formMsg err">⚠️ ${esc(e.message)}</p>`; }
 }
 
 // ---------- Dialogue de formulaire générique ----------
@@ -53,7 +53,7 @@ function openForm(title, fields, values = {}) {
 
 // ---------- 📥 Réponses ----------
 async function reponses() {
-  const [rs, cfg, votes] = await Promise.all([api('GET', 'rsvps'), api('GET', 'config'), api('GET', 'votes')]);
+  const [rs, cfg, votes, inv] = await Promise.all([api('GET', 'rsvps'), api('GET', 'config'), api('GET', 'votes'), api('GET', 'invite')]);
   CACHE.rsvps = rs;
   const n = s => rs.filter(r => r.statut === s).length;
   const opts = cfg.dateOptions.map(o => { const c = { oui: 0, pe: 0, non: 0 };
@@ -86,7 +86,7 @@ async function reponses() {
   $('view').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (confirm('Supprimer cette réponse ?')) { await api('DELETE', 'rsvps', null, b.dataset.del); render(); } });
   $('copyInvite').onclick = async () => {
     const dl = cfg.deadline ? ` avant le ${new Date(cfg.deadline + 'T12:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : '';
-    const msg = `🚨 EVG d'Elie à ${cfg.lieu.replace(/[^\p{L}\p{N} ]/gu, '').trim()} ! 🚨\nRéponds en 2 min (dispos, budget) et vote tes activités préférées${dl} 👉 ${location.origin}\n(Chut, Elie ne sait rien 🤫)`;
+    const msg = `🚨 EVG d'Elie à ${cfg.lieu.replace(/[^\p{L}\p{N} ]/gu, '').trim()} ! 🚨\nRéponds en 2 min (dispos, budget) et vote tes activités préférées${dl} 👉 ${location.origin}/?c=${inv.code}\n(Ce lien te permet de créer ton compte. Chut, Elie ne sait rien 🤫)`;
     try { await navigator.clipboard.writeText(msg); $('copyMsg').textContent = '✔️ Copié, colle-le dans WhatsApp !'; } catch { prompt('Copie ce message :', msg); }
   };
   $('csv').onclick = () => {
@@ -146,7 +146,64 @@ function drawAct(acts, votes, cfg, rs) {
   $('view').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (confirm('Supprimer définitivement cette activité ? (Tu peux aussi la cacher)')) { await api('DELETE', 'activities', null, b.dataset.del); render(); } });
 }
 
-// ---------- 💡 Idées ----------
+
+// ---------- 📬 Propositions des participants ----------
+const IDEA_STATUS = { nouvelle: '🆕 Nouvelle', retenue: '✅ Retenue', refusee: '⛔ Refusée', cachee: '🙈 Cachée' };
+async function propositions() {
+  const [list, members, extra] = await Promise.all([api('GET', 'proposals'), api('GET', 'members'), api('GET', 'defis')]);
+  const name = id => (members.find(m => m.id === id) || {}).prenom || '?';
+  list.sort((a, b) => b.likes - a.likes || b.createdAt.localeCompare(a.createdAt));
+  $('view').innerHTML = `<div class="panel"><h2>Propositions des participants (${list.length})</h2>
+    <p class="hint2">Triées par likes. <b>→ Activité</b> l'ajoute au catalogue (votable en swipe), <b>→ Défi</b> à la liste des défis. Le participant voit le statut et votre note.</p>
+    <div class="cardList">${list.map(i => `<div class="item ${i.statut === 'retenue' ? 'validee' : i.statut === 'refusee' || i.statut === 'cachee' ? 'refusee' : ''}">
+      <div class="row2"><h4 style="flex:1">${esc(i.titre)}</h4><span class="chip">❤️ ${i.likes}</span></div>
+      <small>${esc(i.categorie)}${i.prix ? ' · ≈ ' + euro(i.prix) + '/pers.' : ''} · par ${esc(i.auteur)} · ${esc(IDEA_STATUS[i.statut] || i.statut)}</small>
+      <p>${esc(i.description).replace(/\n/g, '<br>')}</p>
+      ${/^https?:\/\//i.test(i.lien || '') ? `<a href="${esc(i.lien)}" target="_blank" rel="noopener noreferrer">🔗 lien</a>` : ''}
+      <div class="voters"><b>❤️</b> ${esc((i.likers || []).map(name).join(', '))}</div>
+      ${i.comments.length ? `<div class="voters">${i.comments.map(c => `💬 <b>${esc(c.auteur)}</b> : ${esc(c.texte)} <button class="mini danger" data-dc="${i.id}|${c.id}" aria-label="Supprimer ce commentaire">✕</button>`).join('<br>')}</div>` : ''}
+      ${i.note ? `<p class="hint2">Note : ${esc(i.note)}</p>` : ''}
+      <div class="row2"><button class="mini good" data-act="${i.id}">→ Activité</button><button class="mini good" data-defi="${i.id}">→ Défi</button><button class="mini bad" data-st="refusee|${i.id}">⛔ Refuser</button><button class="mini" data-st="nouvelle|${i.id}">↺ Nouvelle</button><button class="mini" data-st="cachee|${i.id}">🙈 Cacher</button><button class="mini" data-note="${i.id}">📝 Note</button><button class="mini danger" data-del="${i.id}">✕</button></div></div>`).join('') || '<p>Aucune proposition pour le moment.</p>'}</div></div>
+    <div class="panel"><h2>Défis ajoutés par vous (${extra.length})</h2><p class="hint2">Ils s'ajoutent à ceux de data.js sur le site.</p>
+    ${extra.map(d => `<div class="taskRow"><span class="chip">${esc({ 1: '🌶️', 2: '🌶️🌶️', 3: '🌶️🌶️🌶️', 4: '💀', g: '👥' }[d.n] || d.n)}</span><span class="tt">${esc(d.t)}</span><button class="mini danger" data-xd="${d.id}">✕</button></div>`).join('') || '<p>Aucun pour le moment.</p>'}
+    <div class="row2" style="margin-top:8px"><button class="mini" id="addDefi">+ Ajouter un défi</button></div></div>`;
+  const byId = id => list.find(x => x.id === id), V = $('view');
+  const DEFI_F = [{ k: 'n', label: 'Niveau', type: 'select', options: [['1', '🌶️ échauffement (1 pt)'], ['2', '🌶️🌶️ costaud (2 pts)'], ['3', '🌶️🌶️🌶️ très gênant (3 pts)'], ['4', '💀 hardcore (5 pts)'], ['g', '👥 groupe (3 pts)']] }, { k: 't', label: 'Le défi', type: 'textarea', rows: 4 }];
+  const mark = (id, statut, note) => api('POST', 'proposals', { id, statut, ...(note !== undefined && { note }) });
+  V.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => { const i = byId(b.dataset.act);
+    const v = await openForm('Ajouter au catalogue des activités', ACT_FIELDS, { emoji: '💡', nom: i.titre, description: i.description, categorie: 'Autre', duree: '2h', ptype: 'pp', prix: i.prix || '', source: i.lien }); if (!v || !v.nom) return;
+    await api('POST', 'activities', valuesToAct(v)); await mark(i.id, 'retenue', 'Ajoutée au catalogue des activités : votez en swipe !'); render(); });
+  V.querySelectorAll('[data-defi]').forEach(b => b.onclick = async () => { const i = byId(b.dataset.defi);
+    const v = await openForm('Ajouter aux défis', DEFI_F, { n: '3', t: i.titre + (i.description ? ' : ' + i.description : '') }); if (!v || !v.t) return;
+    await api('POST', 'defis', { n: v.n === 'g' ? 'g' : +v.n, t: v.t }); await mark(i.id, 'retenue', 'Ajouté aux défis du docteur !'); render(); });
+  V.querySelectorAll('[data-st]').forEach(b => b.onclick = async () => { const [s, id] = b.dataset.st.split('|'); await mark(id, s); render(); });
+  V.querySelectorAll('[data-note]').forEach(b => b.onclick = async () => { const i = byId(b.dataset.note); const v = await openForm('Note visible par tous', [{ k: 'note', label: 'Message du staff (ex : trop cher, on adore…)' }], { note: i.note }); if (v) { await mark(i.id, undefined, v.note); render(); } });
+  V.querySelectorAll('[data-dc]').forEach(b => b.onclick = async () => { const [id, cid] = b.dataset.dc.split('|'); if (confirm('Supprimer ce commentaire ?')) { await api('POST', 'proposals', { id, delcid: cid }); render(); } });
+  V.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (confirm('Supprimer définitivement cette idée (likes et commentaires compris) ?')) { await api('DELETE', 'proposals', null, b.dataset.del); render(); } });
+  V.querySelectorAll('[data-xd]').forEach(b => b.onclick = async () => { if (confirm('Retirer ce défi ?')) { await api('DELETE', 'defis', null, b.dataset.xd); render(); } });
+  $('addDefi').onclick = async () => { const v = await openForm('Nouveau défi', DEFI_F, { n: '3' }); if (v && v.t) { await api('POST', 'defis', { n: v.n === 'g' ? 'g' : +v.n, t: v.t }); render(); } };
+}
+
+// ---------- 👥 Membres + lien d'invitation ----------
+async function membres() {
+  const [ms, rs, votes, inv] = await Promise.all([api('GET', 'members'), api('GET', 'rsvps'), api('GET', 'votes'), api('GET', 'invite')]);
+  const link = `${location.origin}/?c=${inv.code}`, hasR = new Set(rs.map(r => r.id)), hasV = new Set(votes.map(v => v.id));
+  ms.sort((a, b) => a.prenom.localeCompare(b.prenom));
+  $('view').innerHTML = `<div class="panel"><h2>🔗 Lien d'invitation</h2>
+    <p class="hint2">C'est ce lien qui permet de <b>créer un compte</b> (il contient un code secret). Envoyez-le uniquement aux participants. Se connecter à un compte existant ne demande pas le lien.</p>
+    <input id="invLink" readonly value="${esc(link)}" onclick="this.select()">
+    <div class="row2" style="margin-top:8px"><button class="mini good" id="copyLink">📋 Copier le lien</button><button class="mini danger" id="regen">🔄 Régénérer (l'ancien lien ne marchera plus pour créer un compte)</button><span id="lnkMsg" class="hint2"></span></div></div>
+    <div class="panel"><h2>Comptes (${ms.length})</h2>
+    <p class="hint2">« Réinitialiser » supprime le compte (code oublié) : la personne se recrée un compte avec le même prénom et nom et <b>retrouve toutes ses données</b> (réponse, votes, idées).</p>
+    <div class="tblWrap"><table class="tbl"><thead><tr><th>Qui</th><th>Créé</th><th>Réponse</th><th>Votes</th><th></th></tr></thead><tbody>
+    ${ms.map(m => `<tr><td><b>${esc(m.prenom)} ${esc(m.nom)}</b></td><td>${esc((m.createdAt || '').slice(0, 10))}</td><td>${hasR.has(m.id) ? '✅' : '⏳'}</td><td>${hasV.has(m.id) ? '✅' : '⏳'}</td><td><button class="mini danger" data-rm="${m.id}">Réinitialiser</button></td></tr>`).join('') || '<tr><td colspan="5">Aucun compte pour le moment.</td></tr>'}
+    </tbody></table></div></div>`;
+  $('copyLink').onclick = async () => { try { await navigator.clipboard.writeText(link); $('lnkMsg').textContent = '✔️ Copié !'; } catch { prompt('Copie ce lien :', link); } };
+  $('regen').onclick = async () => { if (confirm("Régénérer le lien ? L'ancien ne permettra plus de créer un compte (les comptes existants ne changent pas).")) { await api('POST', 'invite', {}); render(); } };
+  $('view').querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { if (confirm('Réinitialiser ce compte ? La personne devra recréer son compte (mêmes prénom et nom) avec un nouveau code.')) { await api('DELETE', 'members', null, b.dataset.rm); render(); } });
+}
+
+// ---------- 🔒 Idées orga (privées) ----------
 const IDEA_FIELDS = [{ k: 'titre', label: 'Idée' }, { k: 'description', label: 'Détails', type: 'textarea', rows: 4 },
   { k: 'categorie', label: 'Catégorie', type: 'select', options: ['Activité', 'Resto / bar', 'Hébergement', 'Transport', 'Soirée', 'Surprise pour Elie 🤫', 'Cadeau / déguisement', 'Autre'].map(x => [x, x]) },
   { k: 'statut', label: 'Statut', type: 'select', options: [['idee', '💡 Idée'], ['ok', '✅ Validée'], ['non', '⛔ Abandonnée']] }];

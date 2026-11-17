@@ -32,6 +32,31 @@
   <a href="#rsvp" class="btn">Je réponds, docteur 💉</a>
 </header>
 
+<section id="compte" class="compte">
+  <div id="accountOut">
+    <h2>🔐 Ton compte EVG</h2>
+    <p class="hint">Un compte = ton prénom, ton nom et un code perso. Il sert à répondre, voter et proposer des idées <b>sous ton nom</b> (et à empêcher les autres de répondre à ta place).</p>
+    <form id="accountForm" class="form" autocomplete="on">
+      <div class="grid2">
+        <label>Prénom *<input id="accPrenom" required maxlength="40" autocomplete="given-name" enterkeyhint="next"></label>
+        <label>Nom * <small>(une initiale suffit)</small><input id="accNom" required maxlength="40" autocomplete="family-name" enterkeyhint="next"></label>
+      </div>
+      <label>Code perso * <small>(4 caractères minimum, à retenir !)</small><input id="accPin" type="password" required minlength="4" maxlength="40" autocomplete="current-password" enterkeyhint="done"></label>
+      <div class="row2c left">
+        <button class="btn" type="submit" id="loginBtn">Me connecter</button>
+        <button class="btn ghost" type="button" id="regBtn">✨ Créer mon compte</button>
+      </div>
+      <p id="noInvite" class="formMsg err" hidden>Pour créer ton compte, ouvre le <b>lien d'invitation</b> envoyé par les orgas sur WhatsApp.</p>
+      <p id="accMsg" class="formMsg" role="status" aria-live="polite"></p>
+      <p class="hint">Première fois ? « Créer mon compte ». Déjà un compte ? « Me connecter ». Code oublié : demande à un orga.</p>
+    </form>
+  </div>
+  <div id="accountIn" class="accIn" hidden>
+    <span>👤 Salut <b id="whoName"></b> !</span>
+    <span class="accBtns"><button type="button" class="linkBtn2" id="changePin">changer mon code</button><button type="button" class="linkBtn2" id="logoutBtn">me déconnecter</button></span>
+  </div>
+</section>
+
 <section id="plan">
   <h2>📍 Le plan (top secret)</h2>
   <p id="intro" class="intro">Chargement…</p>
@@ -45,11 +70,9 @@
 
 <section id="rsvp">
   <h2>✅ Ta réponse (« je verrai » n'est pas une réponse)</h2>
-  <form id="rsvpForm" class="form" autocomplete="on">
-    <div class="grid2">
-      <label>Prénom *<input name="prenom" class="idn-prenom" required maxlength="40" autocomplete="given-name"></label>
-      <label>Nom * <small>(une initiale suffit)</small><input name="nom" class="idn-nom" required maxlength="40" autocomplete="family-name"></label>
-    </div>
+  <div class="gateAccount gateBox">🔐 Connecte-toi (ou crée ton compte) pour répondre. <a class="btn small" href="#compte">Mon compte</a></div>
+  <form id="rsvpForm" class="form needAccount" autocomplete="on" hidden>
+    <p id="rsvpWho" class="who2"></p>
     <label>WhatsApp / téléphone (pour le groupe)<input name="contact" maxlength="60" inputmode="tel"></label>
 
     <fieldset><legend>Tu viens (ou tu fuis) ? *</legend>
@@ -101,11 +124,7 @@
 <section id="activites">
   <h2>🗳️ Comment on va le faire souffrir : votez !</h2>
   <p class="hint">On ne pourra pas tout faire. Glisse chaque idée à <b>droite 😍</b> si ça te tente, à <b>gauche 🙅</b> sinon. Les plus plébiscitées forment le <b>podium</b>, et le prix s'ajuste au nombre de participants.</p>
-  <div class="idbar">
-    <span>Tu votes en tant que :</span>
-    <input class="idn-prenom" placeholder="Prénom *" aria-label="Prénom" maxlength="40" autocomplete="given-name" enterkeyhint="next"><input class="idn-nom" placeholder="Nom *" aria-label="Nom" maxlength="40" autocomplete="family-name" enterkeyhint="done">
-    <span id="voteProgress" class="chip"></span>
-  </div>
+  <div class="idbar"><span id="voteProgress" class="chip"></span></div>
   <div class="modeSwitch" role="tablist" aria-label="Mode de vote">
     <button type="button" role="tab" data-mode="swipe" class="on">🃏 Swipe</button>
     <button type="button" role="tab" data-mode="liste">📋 Liste</button>
@@ -128,6 +147,26 @@
     <div id="catFilter" class="filters"></div>
     <div id="actGrid" class="actGrid"></div>
   </div>
+</section>
+
+<section id="idees">
+  <h2>💡 Vos idées : proposez, likez, commentez</h2>
+  <p class="hint">Une idée d'activité, de resto, de défi pour Elie, de blague ? Proposez-la ! Les plus likées remontent, et les orgas retiennent les meilleures (elles rejoignent alors le catalogue ou les défis).</p>
+  <div class="gateAccount gateBox">🔐 Connecte-toi pour proposer, liker ou commenter. <a class="btn small" href="#compte">Mon compte</a></div>
+  <form id="ideaForm" class="form needAccount" hidden>
+    <label>Ton idée *<input id="iTitre" required minlength="3" maxlength="80" placeholder="Ex : tournoi de sumo en slip de bain gonflable"></label>
+    <label>Détails<textarea id="iDesc" rows="3" maxlength="600" placeholder="Explique-nous, vends-la, fais-nous rire"></textarea></label>
+    <div class="grid2">
+      <label>Catégorie<select id="iCat"></select></label>
+      <label>Prix estimé / pers. (€, optionnel)<input id="iPrix" type="number" min="0" max="5000" inputmode="numeric"></label>
+    </div>
+    <label>Lien (optionnel)<input id="iLien" type="url" maxlength="200" placeholder="https://…"></label>
+    <button class="btn" type="submit" id="iBtn">Proposer mon idée 🚀</button>
+    <p id="iMsg" class="formMsg" role="status" aria-live="polite"></p>
+  </form>
+  <div class="ideaTools"><div id="iCatFilter" class="filters"></div>
+    <div class="modeSwitch sortSwitch"><button type="button" data-sort="top" class="on">🔥 Les plus likées</button><button type="button" data-sort="new">🆕 Récentes</button></div></div>
+  <div id="ideaList" class="ideaList"></div>
 </section>
 
 <section>
@@ -157,7 +196,7 @@
   <button type="button" class="linkBtn2" id="defiReset">Remettre le compteur à zéro</button>
 </section>
 
-<nav class="bottomNav" aria-label="Navigation rapide"><a href="#rsvp">📝<span>Répondre</span></a><a href="#activites">🗳️<span>Voter <i id="navTodo"></i></span></a><a href="#podium">🏆<span>Podium</span></a></nav>
+<nav class="bottomNav" aria-label="Navigation rapide"><a href="#rsvp">📝<span>Répondre</span></a><a href="#activites">🗳️<span>Voter <i id="navTodo"></i></span></a><a href="#idees">💡<span>Idées</span></a><a href="#podium">🏆<span>Podium</span></a></nav>
 <footer>Fait avec amour, mauvaise foi et Heineken. Elie, on t'aime. Un peu. Pour l'instant. ❤️<br><a href="/admin" class="adminLink">orga</a></footer>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <script src="data.js"></script>

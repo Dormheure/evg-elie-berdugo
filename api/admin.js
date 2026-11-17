@@ -1,6 +1,7 @@
 const crypto = require('crypto');
-const { redis, hgetall, json, getUser, getConfig, DISPLAY, str, seedActivities, body, isJson } = require('./_lib');
-const COLLECTIONS = ['rsvps', 'ideas', 'tasks', 'notes', 'activities', 'votes'];
+const { redis, hgetall, json, getUser, getConfig, DISPLAY, str, seedActivities, body, isJson, inviteCode } = require('./_lib');
+const { loadIdeas } = require('./_ideas');
+const COLLECTIONS = ['rsvps', 'ideas', 'tasks', 'notes', 'activities', 'votes', 'defis'];
 const READONLY = ['rsvps', 'votes'];
 
 module.exports = async (req, res) => {
@@ -27,6 +28,32 @@ module.exports = async (req, res) => {
         await redis('SET', 'evg:config', JSON.stringify(clean));
         return json(res, 200, clean);
       }
+      return json(res, 405, { error: 'Méthode non autorisée' });
+    }
+
+    // --- Code d'invitation (contenu dans le lien envoyé aux participants) ---
+    if (col === 'invite') {
+      if (req.method === 'POST') { await redis('DEL', 'evg:invite'); }          // régénérer = l'ancien lien ne permet plus de créer un compte
+      return json(res, 200, { code: await inviteCode() });
+    }
+    // --- Comptes participants : liste (sans le code) + réinitialisation ---
+    if (col === 'members') {
+      if (req.method === 'GET') return json(res, 200, (await hgetall('evg:members')).map(m => ({ id: m.id, prenom: m.prenom, nom: m.nom, createdAt: m.createdAt })));
+      if (req.method === 'DELETE') { await redis('HDEL', 'evg:members', str(req.query.id, 40)); await redis('DEL', `evg:fail:${str(req.query.id, 40)}`); return json(res, 200, { ok: true }); }
+      return json(res, 405, { error: 'Méthode non autorisée' });
+    }
+    // --- Idées proposées par les participants : modération ---
+    if (col === 'proposals') {
+      if (req.method === 'GET') return json(res, 200, await loadIdeas(null, { includeHidden: true }));
+      if (req.method === 'POST') {
+        const id = str(B.id, 40), raw = await redis('HGET', 'evg:ideas', id); if (!raw) return json(res, 404, { error: 'Idée introuvable.' });
+        const idea = JSON.parse(raw);
+        if (['nouvelle', 'retenue', 'refusee', 'cachee'].includes(B.statut)) idea.statut = B.statut;
+        if (B.note !== undefined) idea.note = str(B.note, 200);
+        if (B.delcid) await redis('HDEL', `evg:icom:${id}`, str(B.delcid, 20));
+        await redis('HSET', 'evg:ideas', id, JSON.stringify(idea)); return json(res, 200, { ok: true });
+      }
+      if (req.method === 'DELETE') { const id = str(req.query.id, 40); await redis('HDEL', 'evg:ideas', id); await redis('DEL', `evg:ilikes:${id}`, `evg:icom:${id}`); return json(res, 200, { ok: true }); }
       return json(res, 405, { error: 'Méthode non autorisée' });
     }
 
