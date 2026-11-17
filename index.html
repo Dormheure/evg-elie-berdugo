@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EVG Elie Berdugo — Amsterdam 2026</title>
+<meta name="description" content="Organisation de l'EVG du Dr. Elie Berdugo à Amsterdam.">
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="marquee"><div id="marquee"></div></div>
+
+<header class="hero">
+  <div class="stamp">URGENT 🚑</div>
+  <h1 id="titre"></h1>
+  <p id="sousTitre" class="sub"></p>
+  <div id="heroPhoto"></div>
+  <div class="countdown" id="countdown"></div>
+  <a href="#rsvp" class="btn">Je suis dispo, docteur 💉</a>
+</header>
+
+<section>
+  <h2>📋 Dossier médical</h2>
+  <table class="dossier" id="diagnostic"></table>
+</section>
+
+<section>
+  <h2>📸 Galerie de la honte</h2>
+  <div class="gallery" id="gallery"></div>
+</section>
+
+<section>
+  <h2>🗓️ Programme thérapeutique</h2>
+  <div class="days" id="programme"></div>
+</section>
+
+<section>
+  <h2>💶 La note (par tête)</h2>
+  <div id="budget"></div>
+</section>
+
+<section>
+  <h2>🗳️ Vote des activités</h2>
+  <p class="hint">Clique pour voter (une fois par idée). Les votes restent sur ton appareil — pour un vrai sondage, utilise le groupe WhatsApp 😉</p>
+  <div id="votes"></div>
+</section>
+
+<section>
+  <h2>🧑‍⚕️ L'équipe soignante</h2>
+  <div class="people" id="participants"></div>
+</section>
+
+<section>
+  <h2>🎲 Défis pour Elie</h2>
+  <ul id="defis" class="defis"></ul>
+  <button class="btn small" id="randDefi">Tirer un défi au sort 🎰</button>
+  <p id="defiResult" class="defiResult"></p>
+</section>
+
+<section id="rsvp">
+  <h2>✅ Je viens</h2>
+  <div class="rsvp">
+    <input id="rsvpNom" placeholder="Ton prénom">
+    <button class="btn" id="rsvpBtn">Confirmer sur WhatsApp</button>
+  </div>
+  <p class="hint" id="rsvpHint"></p>
+</section>
+
+<footer>Fait avec amour, mauvaise foi et Heineken. Elie, on t'aime (un peu). ❤️</footer>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
