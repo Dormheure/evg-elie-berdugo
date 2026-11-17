@@ -232,13 +232,13 @@ $('deck').addEventListener('keydown', e => { const c = topCard(); if (!c) return
 setMode(MODE);
 
 // ---------- Défis du docteur ----------
-const LVL = { 1: ['🌶️', 1], 2: ['🌶️🌶️', 2], 3: ['🌶️🌶️🌶️', 3], g: ['👥', 2] };
+const LVL = { 1: ['🌶️', 1], 2: ['🌶️🌶️', 2], 3: ['🌶️🌶️🌶️', 3], 4: ['💀', 5], g: ['👥', 3] };
 let DONE = new Set(store.get('evg_defis', [])), DLVL = 'tous', DPICK = null;
 const defiPts = i => LVL[S.defis[i].n][1];
 function renderDefis() {
   const pts = [...DONE].reduce((a, i) => a + (S.defis[i] ? defiPts(i) : 0), 0), max = S.defis.reduce((a, d) => a + LVL[d.n][1], 0);
   $('defiScore').textContent = `${pts} / ${max} pts · ${DONE.size}/${S.defis.length} défis`;
-  const lv = [['tous', 'Tous'], ['1', '🌶️'], ['2', '🌶️🌶️'], ['3', '🌶️🌶️🌶️'], ['g', '👥 Groupe']];
+  const lv = [['tous', 'Tous'], ['1', '🌶️'], ['2', '🌶️🌶️'], ['3', '🌶️🌶️🌶️'], ['4', '💀 Hardcore'], ['g', '👥 Groupe']];
   $('defiFilter').innerHTML = lv.map(([k, l]) => `<button type="button" class="chipBtn ${k === DLVL ? 'on' : ''}" aria-pressed="${k === DLVL}" data-k="${k}">${l}</button>`).join('');
   $('defiFilter').querySelectorAll('button').forEach(b => b.onclick = () => { DLVL = b.dataset.k; renderDefis(); });
   $('defiList').innerHTML = S.defis.map((d, i) => ({ d, i })).filter(({ d }) => DLVL === 'tous' || String(d.n) === DLVL)
