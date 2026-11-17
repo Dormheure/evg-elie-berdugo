@@ -185,7 +185,7 @@
   "nom": "Balade Light Festival à pied",
   "emoji": "🌃",
   "categorie": "Insolite & culture",
-  "description": "Parcours des oeuvres lumineuses le long des canaux : gratuit, avec chocolat chaud et mauvaise blagues de rigueur.",
+  "description": "Parcours des oeuvres lumineuses le long des canaux : gratuit, avec de mauvaises blagues de rigueur.",
   "duree": "1h30-2h",
   "prix": {
    "type": "pp",
@@ -328,27 +328,6 @@
   "verifie": true
  },
  {
-  "id": "murder-mystery-diner",
-  "nom": "Dîner murder mystery",
-  "emoji": "🕵️",
-  "categorie": "Jeux & défis",
-  "description": "Dîner enquête médiéval : un coupable parmi vous, et ce n'est pas forcément celui qu'on croit.",
-  "duree": "3h",
-  "prix": {
-   "type": "pp",
-   "tiers": [
-    {
-     "min": 1,
-     "pp": 75
-    }
-   ]
-  },
-  "prixNote": "À partir de 75 €/pers (dîner inclus) ; min. de participants à confirmer",
-  "hiver": true,
-  "source": "https://funamsterdam.com/activities/amsterdam-murder-mystery-dinner/",
-  "verifie": true
- },
- {
   "id": "golflounge",
   "nom": "Golf lounge avec simulateurs",
   "emoji": "⛳",
@@ -395,7 +374,7 @@
   "nom": "The All Out : karaoké + champagne",
   "emoji": "🎤",
   "categorie": "Soirée",
-  "description": "Salle karaoké privée (110 min), champagne et snacks : tout pour une scène que le marié regrettera.",
+  "description": "Salle karaoké privée (110 min) avec champagne : tout pour une scène que le marié regrettera. (Sans les snacks, pas casher.)",
   "duree": "4h",
   "prix": {
    "type": "pp",
@@ -697,48 +676,6 @@
   "verifie": false
  },
  {
-  "id": "cheese-tasting",
-  "nom": "Dégustation de fromage Reypenaer",
-  "emoji": "🧀",
-  "categorie": "Boire & manger",
-  "description": "Fromages affinés et vin pour les gourmets pas sérieux. Il faut bien un peu de culture dans cet EVG.",
-  "duree": "1h",
-  "prix": {
-   "type": "pp",
-   "tiers": [
-    {
-     "min": 1,
-     "pp": 25
-    }
-   ]
-  },
-  "prixNote": "Estimation (prix non publié sur le site) ; réservation obligatoire ; groupes sur demande",
-  "hiver": true,
-  "source": "https://www.reypenaer.nl/amsterdam-tasting-room",
-  "verifie": false
- },
- {
-  "id": "stroopwafel-workshop",
-  "nom": "Atelier stroopwafels",
-  "emoji": "🧇",
-  "categorie": "Boire & manger",
-  "description": "Pétrir, presser, napper de sirop : un atelier convivial où le marié confond caramel et chirurgie.",
-  "duree": "1h30",
-  "prix": {
-   "type": "pp",
-   "tiers": [
-    {
-     "min": 1,
-     "pp": 35
-    }
-   ]
-  },
-  "prixNote": "Estimation d'après le catalogue Fun Amsterdam ; groupe min. à confirmer · minimum 6 pers. demandé",
-  "hiver": true,
-  "source": "https://funamsterdam.com/activities/",
-  "verifie": false
- },
- {
   "id": "patinoire-museumplein",
   "nom": "Patinoire Museumplein",
   "emoji": "⛸️",
@@ -781,32 +718,11 @@
   "verifie": false
  },
  {
-  "id": "oliebollen",
-  "nom": "Oliebollen et chocolat chaud",
-  "emoji": "🍩",
-  "categorie": "Boire & manger",
-  "description": "Les beignets du Nouvel An dans les stands de rue : le dernier repas avant la gueule de bois.",
-  "duree": "30 min",
-  "prix": {
-   "type": "pp",
-   "tiers": [
-    {
-     "min": 1,
-     "pp": 6
-    }
-   ]
-  },
-  "prixNote": "Estimation : environ 1,50-2 € l'oliebol ; stands de rue ouverts surtout du 26 au 31 déc.",
-  "hiver": true,
-  "source": "https://fullsuitcase.com/amsterdam-christmas/",
-  "verifie": false
- },
- {
   "id": "zaanse-schans",
   "nom": "Zaanse Schans (moulins)",
   "emoji": "🌬️",
   "categorie": "Insolite & culture",
-  "description": "Escapade aux moulins à vent, sabots et fromagerie à 20 min en bus. Photos obligatoires avec un sabot sur la tête.",
+  "description": "Escapade aux moulins à vent et aux sabots, à 20 min en bus. Photos obligatoires avec un sabot sur la tête.",
   "duree": "3-4h",
   "prix": {
    "type": "pp",
@@ -821,5 +737,43 @@
   "hiver": true,
   "source": "https://www.dezaanseschans.nl/en/",
   "verifie": false
+ },
+ {
+  "id": "diner-casher",
+  "nom": "Dîner casher en groupe",
+  "emoji": "🥩",
+  "categorie": "Boire & manger",
+  "description": "Gros dîner de viande glatt dans un resto casher d'Amsterdam (Machane Yehuda, Meat Me Kosher, Ha-Golan…). Le marié coupe la viande, vous coupez la parole.",
+  "duree": "2h",
+  "prix": {
+   "type": "pp",
+   "tiers": [
+    {
+     "min": 1,
+     "pp": 40
+    }
+   ]
+  },
+  "prixNote": "estimation, à confirmer par téléphone · réserver tôt · fermé du vendredi soir au samedi soir",
+  "hiver": true,
+  "source": "https://www.amsterdam.info/fr/juive/casher/",
+  "verifie": false
+ },
+ {
+  "id": "visite-quartier-juif",
+  "nom": "Visite guidée du quartier juif",
+  "emoji": "🕍",
+  "categorie": "Insolite & culture",
+  "description": "Une heure de balade guidée dans le quartier juif historique d'Amsterdam : culture au programme, avant que les choses sérieuses ne commencent.",
+  "duree": "1h",
+  "prix": {
+   "type": "group",
+   "prix": 100,
+   "capacite": 15
+  },
+  "prixNote": "100 € par guide, 1 guide pour 15 personnes max · réservation obligatoire",
+  "hiver": true,
+  "source": "https://jck.nl/en/agenda/walking-tour-jewish-amsterdam",
+  "verifie": true
  }
 ]
