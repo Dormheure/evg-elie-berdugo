@@ -86,11 +86,11 @@ function syncRequired() { // si "je ne peux pas" : on masque et on ne demande pl
 form.addEventListener('change', e => { if (e.target.name === 'statut') syncRequired(); });
 async function loadMyRsvp() {   // retrouve MA dernière réponse (compte requis)
   if (!ME || !CFG) return;
-  let r = null; try { r = (await api('/api/rsvp')).rsvp; } catch {} HASRSVP = !!r; renderTodo(); if (!r) return;
+  let r; try { r = (await api('/api/rsvp')).rsvp; } catch { return; } HASRSVP = !!r; renderTodo(); if (!r) return;
   const setRadio = (n, v) => form.querySelectorAll(`input[name="${n}"]`).forEach(el => el.checked = el.value === v);
   setRadio('statut', r.statut); setRadio('lieuOk', r.lieuOk); setRadio('budget', r.budget);
   CFG.dateOptions.forEach(o => setRadio('d_' + o.id, r.dispos?.[o.id]));
-  ['contact', 'lieuIdee', 'budgetMax', 'depart', 'transport', 'regime', 'idees', 'commentaire'].forEach(k => { if (form[k] && r[k] !== undefined && r[k] !== 0) form[k].value = r[k]; });
+  ['contact', 'lieuIdee', 'budgetMax', 'depart', 'adresse', 'transport', 'regime', 'idees', 'commentaire'].forEach(k => { if (form[k] && r[k] !== undefined && r[k] !== 0) form[k].value = r[k]; });
   syncRequired();
 }
 form.addEventListener('submit', async e => {
@@ -393,6 +393,60 @@ function topCountdown() {
   tick(); topT = setInterval(tick, 60000);
 }
 
+// ---------- Accueil obligatoire à la 1re connexion : dates, lieu, adresse ----------
+const ONB = { step: 0, dispos: {}, lieuOk: '', lieuIdee: '', depart: '', adresse: '', transport: 'peu-importe' };
+const lieuCourt = () => (CFG?.lieu || 'Amsterdam').replace(/[^\p{L}\p{N} ]/gu, '').trim();
+function onbRender() {
+  const st = ONB.step, total = 3; $('onbErr').textContent = '';
+  $('onbBar').style.width = ((st + 1) / total * 100) + '%'; $('onbStep').textContent = `${st + 1} / ${total}`;
+  $('onbBack').hidden = st === 0; $('onbNext').textContent = st === total - 1 ? 'Valider mes réponses ✅' : 'Continuer →';
+  const B = $('onbBody');
+  if (st === 0) {
+    $('onbKicker').textContent = `Bienvenue ${ME.prenom} 👋`; $('onbTitle').textContent = 'Les dates te vont ?';
+    $('onbLead').textContent = "Avant tout, on doit bloquer la date. Dis-nous pour chaque option si tu es dispo (sois honnête, on s'organise avec ça).";
+    B.innerHTML = CFG.dateOptions.map(o => `<div class="onbDate"><b>📆 ${safe(o.label)}</b><div class="tri" role="radiogroup" aria-label="${safe(o.label)}">
+      ${[['oui', '✅ Dispo'], ['peut-etre', '🤷 Peut-être'], ['non', '❌ Non']].map(([v, l]) => `<button type="button" data-d="${safe(o.id)}" data-v="${v}" role="radio" aria-checked="${ONB.dispos[o.id] === v}" class="${ONB.dispos[o.id] === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`).join('');
+    B.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { ONB.dispos[b.dataset.d] = b.dataset.v; onbRender(); });
+  } else if (st === 1) {
+    $('onbKicker').textContent = 'Le lieu'; $('onbTitle').textContent = `${lieuCourt()}, ça te va ?`;
+    $('onbLead').textContent = '48 h, 100 % casher, 0 % dignité. Bateaux, soirées et pièges pour Elie.';
+    B.innerHTML = `<div class="opts">${[['oui', '😍', 'Carrément, go !'], ['autre', '💡', "J'ai une autre idée"], ['non', '👎', 'Pas pour moi']].map(([v, e, l]) => `<button type="button" class="opt ${ONB.lieuOk === v ? 'on' : ''}" data-l="${v}" role="radio" aria-checked="${ONB.lieuOk === v}"><span>${e}</span>${l}</button>`).join('')}</div>
+      ${ONB.lieuOk === 'autre' ? `<label>Ton idée de destination<input id="onbIdee" maxlength="120" value="${safe(ONB.lieuIdee)}" placeholder="Ex : Prague, Barcelone…"></label>` : ''}`;
+    B.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { ONB.lieuOk = b.dataset.l; onbRender(); if (ONB.lieuOk === 'autre') $('onbIdee').focus(); });
+    const i = $('onbIdee'); if (i) i.oninput = () => ONB.lieuIdee = i.value;
+  } else {
+    $('onbKicker').textContent = 'Dernière question'; $('onbTitle').textContent = "D'où tu pars ?";
+    $('onbLead').textContent = 'Pour organiser les trajets, les vols et les regroupements vers la gare ou l\'aéroport.';
+    B.innerHTML = `<label>Ville de départ *<input id="onbVille" maxlength="80" autocomplete="address-level2" placeholder="Paris, Lyon, Marseille…" value="${safe(ONB.depart)}"></label>
+      <label>Ton adresse <small>(rue et code postal, facultatif)</small><input id="onbAdr" maxlength="160" autocomplete="street-address" placeholder="12 rue …, 75017" value="${safe(ONB.adresse)}"></label>
+      <label>Transport préféré<select id="onbTr">${[['peu-importe', 'Peu importe'], ['avion', 'Avion ✈️'], ['train', 'Train 🚄'], ['voiture', 'Voiture 🚗']].map(([v, l]) => `<option value="${v}" ${ONB.transport === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`;
+    $('onbVille').oninput = e => ONB.depart = e.target.value; $('onbAdr').oninput = e => ONB.adresse = e.target.value; $('onbTr').onchange = e => ONB.transport = e.target.value;
+  }
+  $('onb').scrollTop = 0;
+}
+async function onbNext() {
+  const err = m => { $('onbErr').textContent = '⚠️ ' + m; };
+  if (ONB.step === 0 && CFG.dateOptions.some(o => !ONB.dispos[o.id])) return err('Réponds pour chaque date 🙏');
+  if (ONB.step === 1 && !ONB.lieuOk) return err('Choisis une réponse.');
+  if (ONB.step < 2) { ONB.step++; return onbRender(); }
+  if (!ONB.depart.trim()) return err('Indique ta ville de départ.');
+  const v = Object.values(ONB.dispos), statut = v.includes('oui') ? 'oui' : v.includes('peut-etre') ? 'peut-etre' : 'non';
+  $('onbNext').disabled = true;
+  try {
+    await postJSON('/api/rsvp', { statut, dispos: ONB.dispos, lieuOk: ONB.lieuOk, lieuIdee: ONB.lieuOk === 'autre' ? ONB.lieuIdee : '', depart: ONB.depart, adresse: ONB.adresse, transport: ONB.transport });
+    $('onb').hidden = true; document.body.classList.remove('onbOpen'); HASRSVP = true;
+    toast(statut === 'non' ? '😭 Noté. Tu peux changer d\'avis dans Mon espace.' : '🎉 Merci ! Maintenant : vote les activités 🗳️');
+    loadMyRsvp(); loadConfig().catch(() => {}); location.hash = statut === 'non' ? '#/accueil' : '#/vote';
+  } catch (e) { err(e.message); }
+  $('onbNext').disabled = false;
+}
+$('onbNext').onclick = onbNext;
+$('onbBack').onclick = () => { if (ONB.step > 0) { ONB.step--; onbRender(); } };
+function maybeOnboard() {
+  if (ME.role === 'admin' || HASRSVP !== false || !CFG) return;
+  ONB.step = 0; $('onb').hidden = false; document.body.classList.add('onbOpen'); onbRender();
+}
+
 // ---------- Démarrage ----------
 (async () => {
   let s; try { s = await api('/api/auth'); } catch { location.replace('/login'); return; }
@@ -401,5 +455,6 @@ function topCountdown() {
   EVGSec.start(ME, s.security);
   renderAccount(); renderFormules(); route();
   try { await loadConfig(); topCountdown(); } catch { $('intro').textContent = 'Impossible de charger les infos pour le moment, recharge la page.'; }
-  loadActivities().catch(() => { AUTHLOAD = false; renderDeck(); }); loadIdeas(); loadMyRsvp();
+  loadActivities().catch(() => { AUTHLOAD = false; renderDeck(); }); loadIdeas();
+  await loadMyRsvp(); maybeOnboard();   // 1re connexion : dates, lieu, adresse avant tout
 })();

@@ -179,8 +179,9 @@
             </div>
             <label>Ton budget max (€, optionnel)<input name="budgetMax" type="number" min="0" max="10000" inputmode="numeric" placeholder="ex : 500"></label>
           </fieldset>
+          <label>Ton adresse de départ <small>(pour organiser les trajets et l'aéroport)</small><input name="adresse" maxlength="160" autocomplete="street-address" placeholder="Rue, code postal…"></label>
           <div class="grid2">
-            <label>Tu pars d'où ?<input name="depart" maxlength="80" placeholder="Paris, Lyon…"></label>
+            <label>Ville de départ<input name="depart" maxlength="80" placeholder="Paris, Lyon…"></label>
             <label>Transport préféré
               <select name="transport"><option value="peu-importe">Peu importe</option><option value="avion">Avion ✈️</option><option value="train">Train 🚄</option><option value="voiture">Voiture 🚗</option></select>
             </label>
@@ -227,6 +228,15 @@
   <a href="#/defis" data-nav="defis">🎯<span>Défis</span></a>
   <a href="#/orga" data-nav="orga" id="navOrga" hidden>🛡️<span>Orga</span></a>
 </nav>
+
+<!-- Accueil obligatoire : dates, lieu, adresse (1re connexion) -->
+<div id="onb" class="onb" hidden role="dialog" aria-modal="true" aria-labelledby="onbTitle"><div class="onbIn">
+  <div class="onbTop"><div class="onbBar"><i id="onbBar"></i></div><span class="onbStep" id="onbStep"></span></div>
+  <span class="kicker" id="onbKicker"></span><h1 id="onbTitle"></h1><p class="lead" id="onbLead"></p>
+  <div class="onbBody" id="onbBody"></div>
+  <p class="onbErr" id="onbErr" role="alert"></p>
+  <div class="onbFoot"><button type="button" class="btn ghost" id="onbBack">←</button><button type="button" class="btn" id="onbNext">Continuer</button></div>
+</div></div>
 
 <!-- Couches de confidentialité -->
 <div id="wm" class="wm" aria-hidden="true"></div>

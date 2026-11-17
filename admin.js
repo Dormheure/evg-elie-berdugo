@@ -69,12 +69,12 @@ async function reponses() {
     ${rs.filter(r => r.lieuIdee).length ? `<p><b>Autres idées de destination :</b> ${rs.filter(r => r.lieuIdee).map(r => esc(r.prenom) + ' → ' + esc(r.lieuIdee)).join(' · ')}</p>` : ''}
   </div>
   <div class="panel"><h2>Toutes les réponses</h2><div class="row2" style="margin-bottom:8px"><button class="mini" id="csv">⬇️ Export CSV</button></div>
-    <div class="tblWrap"><table class="tbl"><thead><tr><th>Qui</th><th>Statut</th>${cfg.dateOptions.map(o => `<th>${esc(o.label)}</th>`).join('')}<th>Lieu</th><th>Budget</th><th>Départ / transport</th><th>Contact</th><th>Régime</th><th>Idées / mot</th><th></th></tr></thead><tbody>
+    <div class="tblWrap"><table class="tbl"><thead><tr><th>Qui</th><th>Statut</th>${cfg.dateOptions.map(o => `<th>${esc(o.label)}</th>`).join('')}<th>Lieu</th><th>Budget</th><th>Adresse / départ</th><th>Contact</th><th>Régime</th><th>Idées / mot</th><th></th></tr></thead><tbody>
     ${rs.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')).map(r => `<tr><td><b>${esc(r.prenom)} ${esc(r.nom)}</b></td><td>${{ oui: '🎉', 'peut-etre': '🤔', non: '😭' }[r.statut]}</td>
       ${cfg.dateOptions.map(o => `<td>${{ oui: '✅', 'peut-etre': '🤷', non: '❌' }[r.dispos?.[o.id]] || '–'}</td>`).join('')}
-      <td>${{ oui: '👍', non: '👎', autre: '💡 ' + esc(r.lieuIdee) }[r.lieuOk]}</td><td>${{ ok: '👌', serre: '😬', trop: '💸' }[r.budget]}${r.budgetMax ? ' ≤' + r.budgetMax + '€' : ''}</td>
-      <td>${esc(r.depart)} ${esc(r.transport)}</td><td>${esc(r.contact)}</td><td>${esc(r.regime)}</td><td>${esc(r.idees)} ${r.commentaire ? '💬 ' + esc(r.commentaire) : ''}</td>
-      <td><button class="mini danger" data-del="${r.id}">✕</button></td></tr>`).join('') || '<tr><td colspan="9">Aucune réponse pour le moment.</td></tr>'}
+      <td>${{ oui: '👍', non: '👎', autre: '💡 ' + esc(r.lieuIdee) }[r.lieuOk] || '–'}</td><td>${{ ok: '👌', serre: '😬', trop: '💸' }[r.budget] || '–'}${r.budgetMax ? ' ≤' + r.budgetMax + '€' : ''}</td>
+      <td>${esc(r.adresse || '')}${r.adresse ? '<br>' : ''}${esc(r.depart)} · ${esc(r.transport)}</td><td>${esc(r.contact)}</td><td>${esc(r.regime)}</td><td>${esc(r.idees)} ${r.commentaire ? '💬 ' + esc(r.commentaire) : ''}</td>
+      <td><button class="mini danger" data-del="${r.id}">✕</button></td></tr>`).join('') || '<tr><td colspan="20">Aucune réponse pour le moment.</td></tr>'}
     </tbody></table></div></div>`;
   $('view').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (confirm('Supprimer cette réponse ?')) { await api('DELETE', 'rsvps', null, b.dataset.del); render(); } });
   $('copyInvite').onclick = async () => {
@@ -83,9 +83,9 @@ async function reponses() {
     try { await navigator.clipboard.writeText(msg); $('copyMsg').textContent = '✔️ Copié, colle-le dans WhatsApp !'; } catch { prompt('Copie ce message :', msg); }
   };
   $('csv').onclick = () => {
-    const head = ['prenom', 'nom', 'statut', ...cfg.dateOptions.map(o => o.label), 'destination', 'idee_destination', 'budget', 'budget_max', 'depart', 'transport', 'contact', 'regime', 'idees', 'commentaire'];
+    const head = ['prenom', 'nom', 'statut', ...cfg.dateOptions.map(o => o.label), 'destination', 'idee_destination', 'budget', 'budget_max', 'adresse', 'depart', 'transport', 'contact', 'regime', 'idees', 'commentaire'];
     const q = v => { let t = String(v ?? ''); if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; }; // anti injection de formules Excel
-    const csv = [head.map(q).join(',')].concat(rs.map(r => [r.prenom, r.nom, r.statut, ...cfg.dateOptions.map(o => r.dispos?.[o.id]), r.lieuOk, r.lieuIdee, r.budget, r.budgetMax, r.depart, r.transport, r.contact, r.regime, r.idees, r.commentaire].map(q).join(','))).join('\n');
+    const csv = [head.map(q).join(',')].concat(rs.map(r => [r.prenom, r.nom, r.statut, ...cfg.dateOptions.map(o => r.dispos?.[o.id]), r.lieuOk, r.lieuIdee, r.budget, r.budgetMax, r.adresse, r.depart, r.transport, r.contact, r.regime, r.idees, r.commentaire].map(q).join(','))).join('\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); a.download = 'reponses-evg.csv'; a.click();
   };
 }

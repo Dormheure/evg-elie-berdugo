@@ -23,9 +23,9 @@ module.exports = async (req, res) => {
     const rsvp = {
       id: me.id, prenom: me.prenom, nom: me.nom,
       contact: str(b.contact, 60), statut: b.statut, dispos,
-      lieuOk: ['oui', 'non', 'autre'].includes(b.lieuOk) ? b.lieuOk : 'oui', lieuIdee: str(b.lieuIdee, 120),
-      budget: ['ok', 'serre', 'trop'].includes(b.budget) ? b.budget : 'ok', budgetMax: Math.max(0, Math.min(10000, parseInt(b.budgetMax, 10) || 0)),
-      depart: str(b.depart, 80), transport: ['avion', 'train', 'voiture', 'peu-importe'].includes(b.transport) ? b.transport : 'peu-importe',
+      lieuOk: ['oui', 'non', 'autre'].includes(b.lieuOk) ? b.lieuOk : '', lieuIdee: str(b.lieuIdee, 120),
+      budget: ['ok', 'serre', 'trop'].includes(b.budget) ? b.budget : '', budgetMax: Math.max(0, Math.min(10000, parseInt(b.budgetMax, 10) || 0)),
+      depart: str(b.depart, 80), adresse: str(b.adresse, 160), transport: ['avion', 'train', 'voiture', 'peu-importe'].includes(b.transport) ? b.transport : 'peu-importe',
       regime: str(b.regime, 200), idees: str(b.idees, 1000), commentaire: str(b.commentaire, 1000),
       createdAt: old ? (JSON.parse(old).createdAt || new Date().toISOString()) : new Date().toISOString(), updatedAt: new Date().toISOString(),
     };

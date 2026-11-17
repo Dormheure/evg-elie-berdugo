@@ -12,6 +12,9 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+/* jamais de défilement horizontal sur téléphone (les cartes du swipe sortent de l'écran sans élargir la page) */
+html,body{overflow-x:hidden;overflow-x:clip;max-width:100%;overscroll-behavior-x:none}
+#pages,.page,.wrap{overflow-x:clip;min-width:0}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased;min-height:100vh;
   padding-bottom:calc(84px + var(--safe-b));
@@ -194,7 +197,7 @@ legend{font-weight:800;padding:0 6px;font-size:14px}
 .modeSwitch{display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:16px}
 .modeSwitch button{border:0;background:none;color:var(--mut);font:inherit;font-weight:800;font-size:14px;padding:8px 14px;border-radius:10px;cursor:pointer}
 .modeSwitch button.on{background:var(--card2);color:var(--tx)}
-.deck{position:relative;height:440px;max-width:400px;margin:0 auto;outline:none}
+.deck{position:relative;height:440px;max-width:400px;margin:0 auto;outline:none;touch-action:pan-y}
 .scard{position:absolute;inset:0;background:linear-gradient(160deg,#1f1f2e,#15151f);border:1px solid var(--line2);border-radius:28px;padding:24px;display:flex;flex-direction:column;box-shadow:0 30px 60px -25px #000;touch-action:pan-y;cursor:grab;overflow:hidden}
 .scard.back1{transform:translateY(10px) scale(.96);opacity:.6}
 .scard.back2{transform:translateY(20px) scale(.92);opacity:.3}
@@ -372,11 +375,44 @@ body.decoyed .wm{display:none}
 .dcFoot{font-size:11px;opacity:.7;text-align:center;margin-top:30px}
 @media print{body *{display:none!important} body::after{content:"Document confidentiel — impression désactivée.";display:block!important;padding:40px;font:20px sans-serif}}
 
+/* ---------- Accueil obligatoire : 3 questions à la 1re connexion ---------- */
+.onb{position:fixed;inset:0;z-index:70;overflow-y:auto;overflow-x:hidden;background:radial-gradient(900px 500px at 50% -10%,#2a160a 0%,transparent 60%),var(--bg);padding:max(18px,env(safe-area-inset-top)) 16px calc(24px + var(--safe-b))}
+.onbIn{max-width:520px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+.onbTop{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.onbBar{flex:1;height:6px;border-radius:99px;background:var(--card2);overflow:hidden}
+.onbBar i{display:block;height:100%;background:var(--grad);transition:width .3s}
+.onbStep{font-size:12px;font-weight:900;color:var(--mut);white-space:nowrap}
+.onb h1{font-size:clamp(26px,7vw,34px);margin:6px 0 8px}
+.onb .lead{color:var(--mut);margin:0 0 20px}
+.onbBody{flex:1;display:grid;gap:12px;align-content:start}
+.onbDate{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.onbDate b{display:block;font-size:17px;margin-bottom:10px}
+.tri{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tri button,.opt{border:1px solid var(--line2);background:var(--bg2);color:var(--tx);font:inherit;font-weight:800;font-size:14px;padding:12px 6px;border-radius:12px;cursor:pointer;min-width:0}
+.tri button.on[data-v=oui],.opt.on{background:#0f2a1f;border-color:var(--ok)}
+.tri button.on[data-v=peut-etre]{background:#2c240c;border-color:var(--warn)}
+.tri button.on[data-v=non]{background:#2c1010;border-color:var(--bad)}
+.opts{display:grid;gap:10px}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;padding:16px;font-size:16px}
+.opt span{font-size:24px}
+.onbFoot{display:flex;gap:10px;margin-top:22px;position:sticky;bottom:0;padding-top:10px;background:linear-gradient(transparent,var(--bg) 30%)}
+.onbFoot .btn{flex:1}
+.onbFoot .ghost{flex:0 0 auto}
+.onbErr{color:var(--bad);font-weight:700;font-size:14px;min-height:20px;margin:8px 0 0}
+body.onbOpen{overflow:hidden}
+body.onbOpen .bottomNav{display:none}
+
 @media (max-width:560px){
   .grid2{grid-template-columns:1fr}
   .fDays{grid-template-columns:1fr}
   .countdown div{min-width:0;flex:1;font-size:24px}
-  .bottomNav a{min-width:0;padding:7px 9px}
+  .bottomNav{left:10px;right:10px;transform:none;max-width:none;justify-content:space-between}
+  .bottomNav a{min-width:0;flex:1;padding:7px 2px}
+  .top{gap:8px}
+  .topCd{padding:4px 8px}
+  .dossier th{width:42%}
+  .comForm{flex-wrap:wrap} .comForm input{flex:1 1 100%}
+  .tbl{font-size:12px}
   .deck{height:420px}
   .heroCta .btn{flex:1}
   .orgaTabs{top:58px}
