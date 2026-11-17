@@ -231,5 +231,36 @@ $('btnUndo').onclick = () => { const h = HIST.pop(); if (!h) return; DECK = [h.i
 $('deck').addEventListener('keydown', e => { const c = topCard(); if (!c) return; if (e.key === 'ArrowRight') { e.preventDefault(); decide(c, 'oui'); } else if (e.key === 'ArrowLeft') { e.preventDefault(); decide(c, 'non'); } });
 setMode(MODE);
 
+// ---------- Défis du docteur ----------
+const LVL = { 1: ['🌶️', 1], 2: ['🌶️🌶️', 2], 3: ['🌶️🌶️🌶️', 3], g: ['👥', 2] };
+let DONE = new Set(store.get('evg_defis', [])), DLVL = 'tous', DPICK = null;
+const defiPts = i => LVL[S.defis[i].n][1];
+function renderDefis() {
+  const pts = [...DONE].reduce((a, i) => a + (S.defis[i] ? defiPts(i) : 0), 0), max = S.defis.reduce((a, d) => a + LVL[d.n][1], 0);
+  $('defiScore').textContent = `${pts} / ${max} pts · ${DONE.size}/${S.defis.length} défis`;
+  const lv = [['tous', 'Tous'], ['1', '🌶️'], ['2', '🌶️🌶️'], ['3', '🌶️🌶️🌶️'], ['g', '👥 Groupe']];
+  $('defiFilter').innerHTML = lv.map(([k, l]) => `<button type="button" class="chipBtn ${k === DLVL ? 'on' : ''}" aria-pressed="${k === DLVL}" data-k="${k}">${l}</button>`).join('');
+  $('defiFilter').querySelectorAll('button').forEach(b => b.onclick = () => { DLVL = b.dataset.k; renderDefis(); });
+  $('defiList').innerHTML = S.defis.map((d, i) => ({ d, i })).filter(({ d }) => DLVL === 'tous' || String(d.n) === DLVL)
+    .map(({ d, i }) => `<li class="${DONE.has(i) ? 'done' : ''}"><label><input type="checkbox" data-i="${i}" ${DONE.has(i) ? 'checked' : ''}><span class="lv">${LVL[d.n][0]}</span><span class="tx">${safe(d.t)}</span></label></li>`).join('');
+  $('defiList').querySelectorAll('input').forEach(c => c.onchange = () => { c.checked ? DONE.add(+c.dataset.i) : DONE.delete(+c.dataset.i); store.set('evg_defis', [...DONE]); if (DPICK === +c.dataset.i && c.checked) DPICK = null; renderDefis(); drawCard(); });
+}
+function drawCard() {
+  const c = $('defiCard'); if (DPICK === null) { c.hidden = true; return; }
+  const d = S.defis[DPICK]; c.hidden = false;
+  c.innerHTML = `<span class="lv">${LVL[d.n][0]}</span><p>${safe(d.t)}</p><div class="row2c"><button type="button" class="btn small" id="dOk">✅ Fait ! (+${LVL[d.n][1]} pt${LVL[d.n][1] > 1 ? 's' : ''})</button><button type="button" class="btn small ghost" id="dNext">🔁 Autre défi</button></div>`;
+  $('dOk').onclick = () => { DONE.add(DPICK); store.set('evg_defis', [...DONE]); DPICK = null; renderDefis(); drawCard(); toast('🔥 Bien joué ! Pense à la preuve photo.'); };
+  $('dNext').onclick = pickDefi;
+}
+function pickDefi() {
+  const left = S.defis.map((d, i) => i).filter(i => !DONE.has(i) && (DLVL === 'tous' || String(S.defis[i].n) === DLVL));
+  if (!left.length) { DPICK = null; $('defiCard').hidden = false; $('defiCard').innerHTML = '<p>🏆 Tous les défis de cette catégorie sont faits. Elie est brisé.</p>'; return; }
+  let n; do { n = left[Math.random() * left.length | 0]; } while (left.length > 1 && n === DPICK);
+  DPICK = n; drawCard(); $('defiCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+$('randDefi').onclick = pickDefi;
+$('defiReset').onclick = () => { if (confirm('Remettre tous les défis à zéro sur cet appareil ?')) { DONE = new Set(); store.set('evg_defis', []); DPICK = null; renderDefis(); drawCard(); } };
+renderDefis();
+
 loadConfig().catch(() => { $('intro').textContent = 'Impossible de charger les infos pour le moment, recharge la page.'; });
 loadActivities().catch(() => { $('actGrid').innerHTML = '<p class="hint">Activités indisponibles pour le moment, recharge la page.</p>'; });

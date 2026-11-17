@@ -49,8 +49,28 @@ window.SITE = {
     ["Espérance de liberté", "3 jours, à compter de l'atterrissage"],
   ],
 
-
-
-
-
+  // Défis du jour J. n = niveau de piment (1, 2, 3) ou 'g' pour un défi de groupe. Modifie / ajoute les tiens ici.
+  defis: [
+    { n: 1, t: "Se présenter comme « le Dr Elie » à un inconnu et lui prendre le pouls 10 secondes (avec son accord)." },
+    { n: 1, t: "Rédiger une ordonnance sur un ticket de resto : « 3 bières, matin, midi et soir », et la faire signer par un barman." },
+    { n: 1, t: "Parler uniquement en termes médicaux pendant 15 minutes (« garçon, j'ai besoin d'une dose urgente de bière »)." },
+    { n: 1, t: "Faire dire « docteur » à 3 inconnus sans jamais le leur demander." },
+    { n: 1, t: "Commander toute une tournée avec un faux accent hollandais, sans jamais craquer." },
+    { n: 1, t: "Poser avec 5 vélos différents en mode rockstar (sans en déplacer aucun, on n'est pas des voleurs)." },
+    { n: 2, t: "Chanter 30 secondes sur une terrasse, sans honte, pendant que le groupe applaudit comme à un concert." },
+    { n: 2, t: "Donner une consultation fictive de 2 minutes à un touriste consentant. Le diagnostic est imposé par le groupe." },
+    { n: 2, t: "Obtenir 10 high-fives d'inconnus en 10 minutes. Interdit d'expliquer pourquoi." },
+    { n: 2, t: "Improviser un discours de mariage de 45 secondes, debout sur une chaise, avec 3 mots imposés : « scalpel », « Ajax », « divorce »." },
+    { n: 2, t: "Faire la statue vivante 1 minute au milieu d'un pont. Le groupe fait la quête." },
+    { n: 2, t: "Danser 1 minute sur le quai, sur le morceau choisi par le groupe, sans regarder personne dans les yeux." },
+    { n: 3, t: "Faire annoncer au micro d'un bar que « le futur marié est parmi nous » et survivre aux applaudissements." },
+    { n: 3, t: "Négocier un shot offert avec l'addition. Échec : il paie la tournée suivante." },
+    { n: 3, t: "Faire 1 minute de marche du canard dans une rue passante, avec le visage sérieux d'un chirurgien en plein bloc." },
+    { n: 3, t: "Convaincre un inconnu de poser sur un selfie « avec son médecin ». Sourire de l'inconnu obligatoire." },
+    { n: 3, t: "Faire une déclaration d'amour de 20 secondes à un barman, un serveur ou un vélo. Au choix, mais avec conviction." },
+    { n: 3, t: "Envoyer un vocal de 20 secondes à sa future femme avec 3 mots imposés par le groupe (le groupe valide le texte avant l'envoi)." },
+    { n: "g", t: "Reproduire « La Ronde de nuit » de Rembrandt avec tout le groupe devant un canal. Le marié au centre, évidemment." },
+    { n: "g", t: "Toute la bande appelle Elie « Docteur » toute la soirée. Un oubli = 1 € dans la cagnotte." },
+    { n: "g", t: "Chacun écrit une « ordonnance » avec le pire conseil de mariage possible. Lecture à voix haute au dîner, par Elie, sans rire." },
+  ],
 };
