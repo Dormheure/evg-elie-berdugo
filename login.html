@@ -77,11 +77,11 @@ input:focus,select:focus{outline:2px solid var(--gold);outline-offset:1px;border
     <div class="lock">🛡️ <span>Une fois connecté, tu le restes sur cet appareil. Le nombre d'appareils par compte est limité et chaque connexion est enregistrée.</span></div>
   </div>
 
-  <div class="card" id="orga" hidden>
-    <form id="fo">
-      <label>Orga<select id="user"><option value="david">David</option><option value="alon">Alon</option><option value="raphael">Raphaël</option></select></label>
+  <div class="card" id="kc" hidden>
+    <form id="fo" autocomplete="on">
+      <label>Identifiant<input id="user" required autocomplete="username" autocapitalize="none" spellcheck="false"></label>
       <label>Mot de passe<input id="pw" type="password" required autocomplete="current-password"></label>
-      <button class="btn" type="submit">Entrer en orga</button>
+      <button class="btn" type="submit">Entrer</button>
       <p id="msgo" class="msg" role="status" aria-live="polite"></p>
     </form>
   </div>
@@ -93,7 +93,7 @@ input:focus,select:focus{outline:2px solid var(--gold);outline-offset:1px;border
     <button class="link" id="out">Ce n'est pas moi</button>
   </div>
 
-  <button class="link" id="toggleOrga">Accès orga</button>
+  <button class="link" id="kback" hidden>← Retour</button>
 </main>
 <script>
 (() => {
@@ -141,14 +141,19 @@ input:focus,select:focus{outline:2px solid var(--gold);outline-offset:1px;border
   };
   $('fo').onsubmit = async e => {
     e.preventDefault(); const msg = $('msgo'); msg.className = 'msg'; msg.textContent = '…';
-    try { await post({ action: 'admin', user: $('user').value, password: $('pw').value }); location.replace('/#/orga'); }
+    try { await post({ action: 'admin', user: $('user').value.trim(), password: $('pw').value }); location.replace('/#/orga'); }
     catch (err) { msg.className = 'msg err'; msg.textContent = err.message; }
   };
-  $('toggleOrga').onclick = () => { const o = $('orga').hidden; $('orga').hidden = !o; $('forms').hidden = o; $('toggleOrga').textContent = o ? '← Retour participant' : 'Accès orga'; };
+  // Entrée discrète : /login#cle ou 5 tapotements rapides sur le cadenas. Rien n'est visible pour les invités.
+  function showKey(on) { $('kc').hidden = !on; $('forms').hidden = on; $('kback').hidden = !on; if (on) setTimeout(() => $('user').focus(), 50); }
+  $('kback').onclick = () => { history.replaceState(null, '', '/login'); showKey(false); };
+  let taps = [];
+  document.querySelector('.seal').addEventListener('click', () => { const t = Date.now(); taps = taps.filter(x => t - x < 2500).concat(t); if (taps.length >= 5) { taps = []; showKey(true); } });
+  if (location.hash === '#cle') showKey(true);
 
   let poll;
   function showWait(me) {
-    $('forms').hidden = $('orga').hidden = $('toggleOrga').hidden = true; $('wait').hidden = false; $('wName').textContent = me?.prenom || '';
+    $('forms').hidden = $('kc').hidden = $('kback').hidden = true; $('wait').hidden = false; $('wName').textContent = me?.prenom || '';
     clearInterval(poll); poll = setInterval(check, 8000);
   }
   async function check() {
