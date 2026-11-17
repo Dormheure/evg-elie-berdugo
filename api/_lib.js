@@ -102,6 +102,11 @@ async function seedActivities() {
   try { seed = require('./_activities.json'); } catch {}
   for (const a of seed) await redis('HSETNX', 'evg:activities', a.id, JSON.stringify({ ...a, statut: 'attente' }));
 }
+// Corps JSON sûr : renvoie null si le JSON est cassé (au lieu de planter en 500)
+function body(req) {
+  try { const b = req.body; return b && typeof b === 'object' ? b : {}; } catch { return null; }
+}
+const isJson = req => /application\/json/i.test(req.headers['content-type'] || '');
 const str = (v, max = 300) => String(v ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, max);
 
-module.exports = { redis, hgetall, json, ip, rateLimit, checkPassword, makeCookie, clearCookie, getUser, norm, DISPLAY, getConfig, DEFAULT_CONFIG, str, seedActivities };
+module.exports = { redis, hgetall, json, ip, rateLimit, checkPassword, makeCookie, clearCookie, getUser, norm, DISPLAY, getConfig, DEFAULT_CONFIG, str, seedActivities, body, isJson };

@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { redis, hgetall, json, rateLimit, getConfig, str, norm, seedActivities } = require('./_lib');
+const { redis, hgetall, json, rateLimit, getConfig, str, norm, seedActivities, body, isJson } = require('./_lib');
 const voterId = (prenom, nom) => crypto.createHash('sha1').update(norm(prenom) + '|' + norm(nom)).digest('hex').slice(0, 16);
 
 // GET  : catalogue + compteurs de votes (+ mes votes si prenom/nom fournis)
@@ -12,9 +12,11 @@ module.exports = async (req, res) => {
 
     if (req.method === 'POST') {
       if (!(await rateLimit(req, 'votes', 120, 3600))) return json(res, 429, { error: 'Trop de tentatives.' });
-      const b = req.body || {};
+      if (!isJson(req)) return json(res, 400, { error: 'Requête invalide.' });
+      const b = body(req);
+      if (!b) return json(res, 400, { error: 'Requête invalide.' });
       const prenom = str(b.prenom, 40), nom = str(b.nom, 40);
-      if (!prenom) return json(res, 400, { error: 'Entre ton prénom avant de voter.' });
+      if (!prenom || !nom) return json(res, 400, { error: 'Entre ton prénom et ton nom (une initiale suffit) avant de voter.' });
       const id = voterId(prenom, nom);
       const old = await redis('HGET', 'evg:votes', id);
       if (!old && (await redis('HLEN', 'evg:votes')) > 300) return json(res, 400, { error: 'Trop de votants.' });
@@ -39,7 +41,7 @@ module.exports = async (req, res) => {
     const cfg = await getConfig();
     const rsvps = await hgetall('evg:rsvps');
     json(res, 200, {
-      activities: acts.map(({ source, ...a }) => ({ ...a, ...counts[a.id] && { counts: counts[a.id] }, source })),
+      activities: acts.map(a => ({ ...a, counts: counts[a.id] })),
       mesVotes, nbVotants: all.length,
       nbParticipants: rsvps.filter(r => r.statut === 'oui').length + 1, // + Elie
       config: { nbActivites: cfg.nbActivites, inviterMarie: cfg.inviterMarie, budgetActivites: cfg.budgetActivites },

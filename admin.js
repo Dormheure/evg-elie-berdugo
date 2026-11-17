@@ -70,6 +70,9 @@ async function reponses() {
     ${opts.map(o => `<div class="${o.score === best && best > 0 ? 'best' : ''}"><b>${esc(o.label)}</b> — ✅ ${o.oui} · 🤷 ${o.pe} · ❌ ${o.non}${bar(o, Math.max(1, o.oui + o.pe + o.non))}</div>`).join('') || '<p>Aucune option de date.</p>'}
     <div class="row2"><div><b>Destination :</b> 👍 ${cnt('lieuOk', 'oui')} · 👎 ${cnt('lieuOk', 'non')} · 💡 ${cnt('lieuOk', 'autre')}</div>
     <div><b>Budget :</b> 👌 ${cnt('budget', 'ok')} · 😬 ${cnt('budget', 'serre')} · 💸 ${cnt('budget', 'trop')}${maxes.length ? ` · budget max médian <b>${euro(maxes[Math.floor(maxes.length / 2)])}</b> (min ${euro(maxes[0])})` : ''}</div></div>
+    <div class="row2" style="margin-top:10px"><button class="mini good" id="copyInvite">📋 Copier le message d'invitation WhatsApp</button><span id="copyMsg" class="hint2"></span></div>
+    ${(() => { const nk = x => (x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(), have = new Set(rs.map(r => nk(r.prenom) + '|' + nk(r.nom)));
+      const miss = votes.filter(v => !have.has(nk(v.prenom) + '|' + nk(v.nom))); return miss.length ? `<p><b>⏳ Ont voté mais pas encore répondu au formulaire :</b> ${miss.map(v => esc(v.prenom + ' ' + v.nom)).join(', ')}</p>` : ''; })()}
     ${rs.filter(r => r.lieuIdee).length ? `<p><b>Autres idées de destination :</b> ${rs.filter(r => r.lieuIdee).map(r => esc(r.prenom) + ' → ' + esc(r.lieuIdee)).join(' · ')}</p>` : ''}
   </div>
   <div class="panel"><h2>Toutes les réponses</h2><div class="row2" style="margin-bottom:8px"><button class="mini" id="csv">⬇️ Export CSV</button></div>
@@ -81,9 +84,14 @@ async function reponses() {
       <td><button class="mini danger" data-del="${r.id}">✕</button></td></tr>`).join('') || '<tr><td colspan="9">Aucune réponse pour le moment.</td></tr>'}
     </tbody></table></div></div>`;
   $('view').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (confirm('Supprimer cette réponse ?')) { await api('DELETE', 'rsvps', null, b.dataset.del); render(); } });
+  $('copyInvite').onclick = async () => {
+    const dl = cfg.deadline ? ` avant le ${new Date(cfg.deadline + 'T12:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : '';
+    const msg = `🚨 EVG d'Elie à ${cfg.lieu.replace(/[^\p{L}\p{N} ]/gu, '').trim()} ! 🚨\nRéponds en 2 min (dispos, budget) et vote tes activités préférées${dl} 👉 ${location.origin}\n(Chut, Elie ne sait rien 🤫)`;
+    try { await navigator.clipboard.writeText(msg); $('copyMsg').textContent = '✔️ Copié, colle-le dans WhatsApp !'; } catch { prompt('Copie ce message :', msg); }
+  };
   $('csv').onclick = () => {
     const head = ['prenom', 'nom', 'statut', ...cfg.dateOptions.map(o => o.label), 'destination', 'idee_destination', 'budget', 'budget_max', 'depart', 'transport', 'contact', 'regime', 'idees', 'commentaire'];
-    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const q = v => { let t = String(v ?? ''); if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; }; // anti injection de formules Excel
     const csv = [head.map(q).join(',')].concat(rs.map(r => [r.prenom, r.nom, r.statut, ...cfg.dateOptions.map(o => r.dispos?.[o.id]), r.lieuOk, r.lieuIdee, r.budget, r.budgetMax, r.depart, r.transport, r.contact, r.regime, r.idees, r.commentaire].map(q).join(','))).join('\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); a.download = 'reponses-evg.csv'; a.click();
   };
@@ -109,7 +117,10 @@ function valuesToAct(v, old = {}) {
 }
 let ANB = 8;
 async function activites() {
-  const [acts, votes, cfg, rs] = await Promise.all([api('GET', 'activities'), api('GET', 'votes'), api('GET', 'config'), api('GET', 'rsvps')]);
+  const d = await Promise.all([api('GET', 'activities'), api('GET', 'votes'), api('GET', 'config'), api('GET', 'rsvps')]);
+  drawAct(...d);
+}
+function drawAct(acts, votes, cfg, rs) {
   const by = {}; acts.forEach(a => by[a.id] = { oui: [], non: [] });
   votes.forEach(v => Object.entries(v.votes || {}).forEach(([k, x]) => by[k] && by[k][x].push(v.prenom)));
   acts.forEach(a => a.counts = { oui: by[a.id].oui.length, non: by[a.id].non.length });
@@ -127,8 +138,8 @@ async function activites() {
   <div class="cardList">${order.map(a => `<div class="item ${a.statut || ''}"><div class="row2"><b style="font-size:1.4rem">${esc(a.emoji)}</b><h4 style="flex:1">${rank[a.id] && rank[a.id] <= cfg.nbActivites ? `<span class="chip">#${rank[a.id]}</span> ` : ''}${esc(a.nom)}</h4></div>
     <small>${esc(a.categorie)} · ${esc(a.duree)} · ${esc(P.bareme(a))} → <b>${euro(P.pp(a, ANB))}</b>/pers. à ${ANB}${a.verifie === false ? ' ⚠️ prix estimé' : ''}</small><p>${esc(a.description)}</p>
     <div class="voters"><b>😍 ${a.counts.oui}</b> ${esc(by[a.id].oui.join(', '))}<br><u>🙅 ${a.counts.non}</u> ${esc(by[a.id].non.join(', '))}</div>
-    <div class="row2"><button class="mini good" data-s="validee" data-id="${a.id}">✅ Valider</button><button class="mini bad" data-s="refusee" data-id="${a.id}">⛔ Refuser</button><button class="mini" data-s="attente" data-id="${a.id}">↺ En attente</button><button class="mini" data-s="cachee" data-id="${a.id}">🙈 Cacher</button><button class="mini" data-edit="${a.id}">✏️</button><button class="mini danger" data-del="${a.id}">✕</button>${a.source ? `<a href="${esc(a.source)}" target="_blank" rel="noopener noreferrer">🔗</a>` : ''}</div></div>`).join('')}</div></div>`;
-  $('anb').oninput = e => { ANB = +e.target.value; activites(); };
+    <div class="row2"><button class="mini good" data-s="validee" data-id="${a.id}">✅ Valider</button><button class="mini bad" data-s="refusee" data-id="${a.id}">⛔ Refuser</button><button class="mini" data-s="attente" data-id="${a.id}">↺ En attente</button><button class="mini" data-s="cachee" data-id="${a.id}">🙈 Cacher</button><button class="mini" data-edit="${a.id}">✏️</button><button class="mini danger" data-del="${a.id}">✕</button>${/^https?:\/\//i.test(a.source || '') ? `<a href="${esc(a.source)}" target="_blank" rel="noopener noreferrer" aria-label="Voir le site">🔗</a>` : ''}</div></div>`).join('')}</div></div>`;
+  $('anb').oninput = e => { ANB = +e.target.value; drawAct(acts, votes, cfg, rs); $('anb').focus(); };
   $('addAct').onclick = async () => { const v = await openForm('Nouvelle activité', ACT_FIELDS, { ptype: 'pp' }); if (v && v.nom) { await api('POST', 'activities', valuesToAct(v)); render(); } };
   $('view').querySelectorAll('[data-s]').forEach(b => b.onclick = async () => { await api('POST', 'activities', { id: b.dataset.id, statut: b.dataset.s }); render(); });
   $('view').querySelectorAll('[data-edit]').forEach(b => b.onclick = async () => { const a = acts.find(x => x.id === b.dataset.edit); const v = await openForm('Modifier', ACT_FIELDS, actToValues(a)); if (v) { await api('POST', 'activities', valuesToAct(v, a)); render(); } });
@@ -192,9 +203,12 @@ async function reglages() {
     <label>Programme public (optionnel) — format : <code>## Jour — Titre</code> puis lignes <code>- activité</code><textarea name="programme" rows="8">${esc(progToText(c.programme))}</textarea></label>
     <button class="btn" type="submit">💾 Enregistrer</button><p id="cfgMsg" class="formMsg"></p></form></div>`;
   $('cfgForm').onsubmit = async e => { e.preventDefault(); const f = new FormData(e.target);
-    const oldIds = c.dateOptions.map(o => o.id);
+    const byLabel = Object.fromEntries(c.dateOptions.map(o => [o.label, o.id])), used = new Set();
+    const labels = f.get('dates').split('\n').map(x => x.trim()).filter(Boolean);
+    labels.forEach(l => { if (byLabel[l]) used.add(byLabel[l]); });
+    const idFor = (l, i) => byLabel[l] || (c.dateOptions[i] && !used.has(c.dateOptions[i].id) && !labels.includes(c.dateOptions[i].label) ? (used.add(c.dateOptions[i].id), c.dateOptions[i].id) : 'd' + Date.now().toString(36) + i);
     const body = { lieu: f.get('lieu'), intro: f.get('intro'), deadline: f.get('deadline'), dateFinale: f.get('dateFinale'), nbActivites: f.get('nbActivites'), budgetActivites: f.get('budgetActivites'), inviterMarie: f.get('inviterMarie') === 'on',
-      dateOptions: f.get('dates').split('\n').map(s => s.trim()).filter(Boolean).map((label, i) => ({ id: oldIds[i] || 'd' + Date.now().toString(36) + i, label })),
+      dateOptions: labels.map((label, i) => ({ id: idFor(label, i), label })),
       budget: f.get('budget').split('\n').map(l => { const [poste, m] = l.split('|'); return { poste: (poste || '').trim(), montant: parseFloat((m || '0').replace(',', '.')) || 0 }; }).filter(b => b.poste),
       programme: textToProg(f.get('programme')) };
     try { await api('PUT', 'config', body); $('cfgMsg').className = 'formMsg ok'; $('cfgMsg').textContent = '✅ Enregistré — visible sur le site.'; } catch (err) { $('cfgMsg').className = 'formMsg err'; $('cfgMsg').textContent = err.message; } };

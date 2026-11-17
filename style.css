@@ -104,3 +104,32 @@ footer{text-align:center;padding:30px 16px 50px;font-weight:700}
 .votes button i{font-style:normal;opacity:.6;margin-left:4px}
 .votes .vy.on{background:#2bd96b}.votes .vn.on{background:#ff6b6b;color:#fff}
 .adminLink{color:inherit;opacity:.4;font-size:.8rem}
+
+/* ===== Audit : accessibilité, mobile, finitions ===== */
+.skip{position:absolute;left:-999px;top:0;background:var(--k);color:var(--y);padding:10px 14px;z-index:100}.skip:focus{left:0}
+:focus-visible{outline:3px solid var(--p);outline-offset:2px}
+.deadlineTxt{margin:2px 0 0;font-size:.85rem;font-weight:700;opacity:.75}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--k);color:#fff;padding:12px 18px;border-radius:12px;border:3px solid var(--y);font-weight:800;z-index:50;max-width:90vw;text-align:center}
+.toast[hidden],[hidden]{display:none!important}
+.hint.light{color:#fff;opacity:.9}
+.est.total{margin-top:8px;background:#ffe60033}.est.total b{color:var(--y)}
+.dossier th{background:var(--b);width:40%;text-align:left;border:2px dashed var(--k);padding:10px;font-weight:700}
+figure.polaroid{margin:0}.polaroid figcaption{font-weight:700;font-size:.9rem;margin:10px 0 0;text-align:center}
+.ahead{display:flex;gap:10px;align-items:center}.ahead .aem{font-size:2rem;line-height:1}.ahead h4{margin:0;font-size:1.05rem;line-height:1.2}
+.price a{color:inherit}
+.votes button{min-height:46px}
+.chipBtn{min-height:38px}
+.seg span{min-height:44px;display:inline-flex;align-items:center}
+.seg.small span{min-height:40px}
+.act{box-shadow:3px 3px 0 var(--k)}
+@media (max-width:600px){
+  section{margin:18px 10px;padding:16px 12px;box-shadow:5px 5px 0 var(--k)}
+  h2{font-size:1.8rem}
+  .podium{padding:12px}.podItem{padding:6px 8px}
+  .actGrid{grid-template-columns:1fr}
+  .dateRow{flex-direction:column;align-items:flex-start}
+}
+@media (prefers-reduced-motion:reduce){
+  #marquee,.frame{animation:none!important}.btn,.polaroid,.mark,.gaugeBar i{transition:none!important}
+  .polaroid:nth-child(odd),.polaroid:nth-child(even),section:nth-of-type(even),section:nth-of-type(odd){transform:none}
+}

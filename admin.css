@@ -34,3 +34,17 @@ dialog h3{margin:0 0 10px;font-family:Bangers;font-size:1.6rem}
 .dlgBtns{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.btn.ghost{background:#fff;color:var(--k)}
 .noteBox textarea{min-height:140px}
 .hint2{font-size:.8rem;opacity:.7}
+
+/* ===== Mobile : en-tête compact, onglets défilants, stats en grille ===== */
+@media (max-width:700px){
+  .adminTop{position:static;padding:8px 10px;gap:8px}
+  .adminTop .logo{font-size:1.2rem}
+  .adminTop nav{flex-wrap:nowrap;overflow-x:auto;order:3;flex-basis:100%;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .adminTop nav button{white-space:nowrap;flex:none}
+  .who{margin-left:auto;font-size:.78rem}
+  .stats{grid-template-columns:repeat(2,1fr)}.stat b{font-size:1.6rem}
+  #view{padding:12px 8px 50px}.panel{padding:12px}
+  .cardList{grid-template-columns:1fr}
+  .tbl th{position:static}
+}
+.stats{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}

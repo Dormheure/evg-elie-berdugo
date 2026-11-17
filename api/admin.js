@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { redis, hgetall, json, getUser, getConfig, DISPLAY, str, seedActivities } = require('./_lib');
+const { redis, hgetall, json, getUser, getConfig, DISPLAY, str, seedActivities, body, isJson } = require('./_lib');
 const COLLECTIONS = ['rsvps', 'ideas', 'tasks', 'notes', 'activities', 'votes'];
 const READONLY = ['rsvps', 'votes'];
 
@@ -7,12 +7,16 @@ module.exports = async (req, res) => {
   const user = getUser(req);
   if (!user) return json(res, 401, { error: 'Non connecté' });
   const col = req.query.col;
+  const writes = ['POST', 'PUT'].includes(req.method);
+  if (writes && !isJson(req)) return json(res, 400, { error: 'Requête invalide.' });
+  const B = writes ? body(req) : {};
+  if (!B) return json(res, 400, { error: 'JSON invalide.' });
   try {
     // --- Config publique (infos de l'EVG) ---
     if (col === 'config') {
       if (req.method === 'GET') return json(res, 200, await getConfig());
       if (req.method === 'PUT') {
-        const c = req.body || {};
+        const c = B;
         const clean = {
           lieu: str(c.lieu, 80), intro: str(c.intro, 1500), deadline: str(c.deadline, 10), dateFinale: str(c.dateFinale, 16),
           dateOptions: (c.dateOptions || []).slice(0, 8).map((o, i) => ({ id: str(o.id, 20) || 'd' + i, label: str(o.label, 60) })).filter(o => o.label),
@@ -36,12 +40,13 @@ module.exports = async (req, res) => {
     }
     if (req.method === 'POST' || req.method === 'PUT') {
       if (READONLY.includes(col)) return json(res, 400, { error: 'Lecture seule.' });
-      const b = req.body || {};
+      const b = B;
       const raw = JSON.stringify(b);
       if (raw.length > 20000) return json(res, 400, { error: 'Trop volumineux' });
       const id = str(b.id, 40) || crypto.randomBytes(6).toString('hex');
       const prev = await redis('HGET', key, id);
       const old = prev ? JSON.parse(prev) : {};
+      if (b.source !== undefined && !/^https?:\/\//i.test(String(b.source))) b.source = '';
       const item = { ...old, ...b, id, updatedAt: new Date().toISOString(), updatedBy: user };
       if (!old.createdAt) { item.createdAt = item.updatedAt; item.createdBy = user; }
       if (col === 'ideas') {

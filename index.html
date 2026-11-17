@@ -5,12 +5,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>EVG Elie Berdugo — Amsterdam 2026</title>
-<meta name="description" content="Organisation de l'EVG du Dr. Elie Berdugo à Amsterdam.">
+<meta name="description" content="Dispos, budget et activités : on organise l'EVG d'Elie à Amsterdam. À toi de répondre !">
+<meta property="og:type" content="website">
+<meta property="og:title" content="EVG d'Elie à Amsterdam : réponds et vote !">
+<meta property="og:description" content="Dispos, budget, activités : donne ton avis en 2 minutes. (Chut, Elie ne sait rien.)">
+<meta property="og:image" content="https://evg-elie-berdugo.vercel.app/photos/elie13.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#ffe600">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🩺%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="marquee"><div id="marquee"></div></div>
+<noscript><p style="padding:20px;font-weight:900">Ce site a besoin de JavaScript pour fonctionner.</p></noscript>
+<a class="skip" href="#rsvp">Aller au formulaire</a>
+<div class="marquee" aria-hidden="true"><div id="marquee"></div></div>
 
 <header class="hero">
   <div class="stamp">URGENT 🚑</div>
@@ -18,13 +27,14 @@
   <p id="sousTitre" class="sub"></p>
   <div id="heroPhoto"></div>
   <p id="countLabel" class="countLabel"></p>
+  <p id="deadlineTxt" class="deadlineTxt"></p>
   <div class="countdown" id="countdown"></div>
   <a href="#rsvp" class="btn">Je réponds, docteur 💉</a>
 </header>
 
 <section id="plan">
   <h2>📍 Le plan</h2>
-  <p id="intro" class="intro"></p>
+  <p id="intro" class="intro">Chargement…</p>
   <div class="planGrid">
     <div class="card"><h3>📆 Dates possibles</h3><ul id="planDates"></ul></div>
     <div class="card"><h3>🗺️ Destination</h3><p id="planLieu" class="big"></p></div>
@@ -37,8 +47,8 @@
   <h2>✅ Ta réponse</h2>
   <form id="rsvpForm" class="form" autocomplete="on">
     <div class="grid2">
-      <label>Prénom *<input name="prenom" class="idn-prenom" required maxlength="40"></label>
-      <label>Nom<input name="nom" class="idn-nom" maxlength="40"></label>
+      <label>Prénom *<input name="prenom" class="idn-prenom" required maxlength="40" autocomplete="given-name"></label>
+      <label>Nom * <small>(une initiale suffit)</small><input name="nom" class="idn-nom" required maxlength="40" autocomplete="family-name"></label>
     </div>
     <label>WhatsApp / téléphone (pour le groupe)<input name="contact" maxlength="60" inputmode="tel"></label>
 
@@ -50,11 +60,12 @@
       </div>
     </fieldset>
 
-    <fieldset><legend>Tes dispos selon les dates</legend><div id="formDates"></div></fieldset>
+    <div id="formDetails">
+    <fieldset><legend>Tes dispos selon les dates *</legend><div id="formDates"></div></fieldset>
 
     <fieldset><legend>La destination <span id="lieuNom"></span> te va ?</legend>
       <div class="seg">
-        <label><input type="radio" name="lieuOk" value="oui" checked><span>👍 Oui</span></label>
+        <label><input type="radio" name="lieuOk" value="oui"><span>👍 Oui</span></label>
         <label><input type="radio" name="lieuOk" value="non"><span>👎 Non</span></label>
         <label><input type="radio" name="lieuOk" value="autre"><span>💡 J'ai une autre idée</span></label>
       </div>
@@ -63,7 +74,7 @@
 
     <fieldset><legend>Le budget (<span id="budgetTotal"></span> / pers. estimé) te va ?</legend>
       <div class="seg">
-        <label><input type="radio" name="budget" value="ok" checked><span>👌 Ça va</span></label>
+        <label><input type="radio" name="budget" value="ok"><span>👌 Ça va</span></label>
         <label><input type="radio" name="budget" value="serre"><span>😬 Un peu serré</span></label>
         <label><input type="radio" name="budget" value="trop"><span>💸 Trop cher</span></label>
       </div>
@@ -78,10 +89,12 @@
     </div>
     <label>Régime / allergies<input name="regime" maxlength="200" placeholder="Casher, sans gluten, allergie…"></label>
     <label>Tes idées / envies (hors liste d'activités)<textarea name="idees" rows="3" maxlength="1000"></textarea></label>
+    </div>
     <label>Un mot pour Elie (ou pour nous)<textarea name="commentaire" rows="2" maxlength="1000"></textarea></label>
 
     <button class="btn" type="submit" id="rsvpBtn">Envoyer ma réponse 🚀</button>
-    <p id="rsvpMsg" class="formMsg" role="status"></p>
+    <p id="rsvpMsg" class="formMsg" role="status" aria-live="polite"></p>
+    <a id="goVote" class="btn small" href="#activites" hidden>Passer au vote des activités 🗳️</a>
   </form>
 </section>
 
@@ -90,11 +103,11 @@
   <p class="hint">On ne pourra pas tout faire. Vote 😍 ou 🙅 sur chaque idée : les plus plébiscitées forment le <b>podium</b>, et le prix s'ajuste au nombre de participants.</p>
   <div class="idbar">
     <span>Tu votes en tant que :</span>
-    <input class="idn-prenom" placeholder="Prénom *" maxlength="40"><input class="idn-nom" placeholder="Nom" maxlength="40">
+    <input class="idn-prenom" placeholder="Prénom *" aria-label="Prénom" maxlength="40" autocomplete="given-name"><input class="idn-nom" placeholder="Nom *" aria-label="Nom" maxlength="40" autocomplete="family-name">
     <span id="voteProgress" class="chip"></span>
   </div>
 
-  <div id="podium" class="podium"></div>
+  <div id="podium" class="podium" aria-live="polite"></div>
 
   <div id="catFilter" class="filters"></div>
   <div id="actGrid" class="actGrid"></div>
@@ -123,6 +136,7 @@
 </section>
 
 <footer>Fait avec amour, mauvaise foi et Heineken. Elie, on t'aime (un peu). ❤️<br><a href="/admin" class="adminLink">orga</a></footer>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <script src="data.js"></script>
 <script src="pricing.js"></script>
 <script src="app.js"></script>

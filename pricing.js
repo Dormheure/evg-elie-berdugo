@@ -14,8 +14,10 @@ window.EVGPrice = {
   bareme(a) {
     const p = a.prix;
     if (p.type === 'group') return `${p.prix} € le groupe (max ${p.capacite} pers.)`;
-    if (p.tiers.length === 1) return `${p.tiers[0].pp} €/pers.`;
-    return p.tiers.map(t => `${t.pp} €/pers. dès ${t.min}`).join(' · ');
+    // on fusionne les paliers au même prix (ex. 19 € dès 1 et 19 € dès 10)
+    const t = p.tiers.filter((x, i) => i === 0 || x.pp !== p.tiers[i - 1].pp);
+    if (t.length === 1) return t[0].pp === 0 ? 'gratuit' : `${t[0].pp} €/pers.`;
+    return t.map((x, i) => `${x.pp} €/pers.${i ? ' dès ' + x.min + ' pers.' : ''}`).join(' · ');
   },
   // classement : validées d'abord, puis nb de "oui", puis solde (oui - non). Les refusées sortent.
   rank(acts) {
@@ -26,6 +28,8 @@ window.EVGPrice = {
       return (cy.oui - cx.oui) || ((cy.oui - cy.non) - (cx.oui - cx.non)) || x.nom.localeCompare(y.nom);
     });
   },
+  // podium : uniquement ce qui a au moins un 😍 (ou qui est validé) — pas de faux classement sans votes
+  podium(acts, N) { return this.rank(acts).filter(a => a.statut === 'validee' || (a.counts?.oui || 0) > 0).slice(0, N); },
   // estimation du podium : total, prix par payeur (le marié est invité => réparti sur les autres)
   estimate(list, n, inviterMarie) {
     const total = list.reduce((s, a) => s + this.total(a, n), 0);

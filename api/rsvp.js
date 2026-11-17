@@ -1,13 +1,15 @@
 const crypto = require('crypto');
-const { redis, json, rateLimit, getConfig, str, norm } = require('./_lib');
+const { redis, json, rateLimit, getConfig, str, norm, body, isJson } = require('./_lib');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return json(res, 405, { error: 'Méthode non autorisée' });
   try {
     if (!(await rateLimit(req, 'rsvp', 20, 3600))) return json(res, 429, { error: 'Trop de tentatives, réessaie plus tard.' });
-    const b = req.body || {};
+    if (!isJson(req)) return json(res, 400, { error: 'Requête invalide.' });
+    const b = body(req);
+    if (!b) return json(res, 400, { error: 'Requête invalide.' });
     const prenom = str(b.prenom, 40), nom = str(b.nom, 40);
-    if (!prenom) return json(res, 400, { error: 'Le prénom est obligatoire.' });
+    if (!prenom || !nom) return json(res, 400, { error: 'Prénom et nom sont obligatoires (une initiale suffit pour le nom) : ça évite que deux amis du même prénom écrasent leur réponse.' });
     if (!['oui', 'peut-etre', 'non'].includes(b.statut)) return json(res, 400, { error: 'Dis-nous si tu viens.' });
 
     const cfg = await getConfig();
