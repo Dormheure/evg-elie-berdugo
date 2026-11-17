@@ -182,11 +182,7 @@ const DEFAULT_CONFIG = {
   intro: "Les gars, c'est officiel : Elie va se marier et personne n'a réussi à l'en empêcher. On l'emmène donc à Amsterdam pour ses dernières 48 heures en homme libre : bateau, bière, humiliations légères. Donnez vos dispos, votre budget et vos idées, nous on s'occupe de la préparation psychologique du patient. (Chut, Elie ne sait rien 🤫)",
   deadline: '2026-12-01',
   dateFinale: '',
-  dateOptions: [
-    { id: 'a', label: 'Sam 26 → Mar 29 déc.' },
-    { id: 'b', label: 'Dim 27 → Mer 30 déc.' },
-    { id: 'c', label: 'Lun 28 → Jeu 31 déc.' },
-  ],
+  dateOptions: [{ id: 'b', label: 'Dim 27 → Mer 30 déc.' }],
   budget: [
     { poste: 'Transport (A/R)', montant: 150 },
     { poste: 'Hébergement (2 nuits)', montant: 160 },

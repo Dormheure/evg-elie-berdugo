@@ -47,6 +47,7 @@ const fmtDate = d => new Date(d + 'T12:00').toLocaleDateString('fr-FR', { day: '
 async function loadConfig() {
   const d = await api('/api/config'); CFG = d.config; VENUS = d.venus;
   $('intro').textContent = CFG.intro;
+  $('planDates').closest('.card').querySelector('h3').textContent = CFG.dateOptions.length === 1 ? '📆 Les dates' : '📆 Les dates proposées';
   $('planDates').innerHTML = CFG.dateOptions.map(o => `<li>${safe(o.label)}</li>`).join('');
   $('planLieu').textContent = CFG.lieu; $('lieuNom').textContent = '(' + CFG.lieu.replace(/[^\p{L}\p{N} ]/gu, '').trim() + ')';
   $('budgetTotal').textContent = '~' + budgetTotal() + ' €';
@@ -402,8 +403,9 @@ function onbRender() {
   $('onbBack').hidden = st === 0; $('onbNext').textContent = st === total - 1 ? 'Valider mes réponses ✅' : 'Continuer →';
   const B = $('onbBody');
   if (st === 0) {
-    $('onbKicker').textContent = `Bienvenue ${ME.prenom} 👋`; $('onbTitle').textContent = 'Les dates te vont ?';
-    $('onbLead').textContent = "Avant tout, on doit bloquer la date. Dis-nous pour chaque option si tu es dispo (sois honnête, on s'organise avec ça).";
+    const one = CFG.dateOptions.length === 1;
+    $('onbKicker').textContent = `Bienvenue ${ME.prenom} 👋`; $('onbTitle').textContent = one ? 'La date te va ?' : 'Les dates te vont ?';
+    $('onbLead').textContent = one ? "Avant tout : on part à ces dates. Dis-nous si tu es dispo (sois honnête, on réserve avec ça)." : "Avant tout, on doit bloquer la date. Dis-nous pour chaque option si tu es dispo (sois honnête, on s'organise avec ça).";
     B.innerHTML = CFG.dateOptions.map(o => `<div class="onbDate"><b>📆 ${safe(o.label)}</b><div class="tri" role="radiogroup" aria-label="${safe(o.label)}">
       ${[['oui', '✅ Dispo'], ['peut-etre', '🤷 Peut-être'], ['non', '❌ Non']].map(([v, l]) => `<button type="button" data-d="${safe(o.id)}" data-v="${v}" role="radio" aria-checked="${ONB.dispos[o.id] === v}" class="${ONB.dispos[o.id] === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`).join('');
     B.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { ONB.dispos[b.dataset.d] = b.dataset.v; onbRender(); });
@@ -426,7 +428,7 @@ function onbRender() {
 }
 async function onbNext() {
   const err = m => { $('onbErr').textContent = '⚠️ ' + m; };
-  if (ONB.step === 0 && CFG.dateOptions.some(o => !ONB.dispos[o.id])) return err('Réponds pour chaque date 🙏');
+  if (ONB.step === 0 && CFG.dateOptions.some(o => !ONB.dispos[o.id])) return err(CFG.dateOptions.length === 1 ? 'Dis-nous si la date te va 🙏' : 'Réponds pour chaque date 🙏');
   if (ONB.step === 1 && !ONB.lieuOk) return err('Choisis une réponse.');
   if (ONB.step < 2) { ONB.step++; return onbRender(); }
   if (!ONB.depart.trim()) return err('Indique ta ville de départ.');
