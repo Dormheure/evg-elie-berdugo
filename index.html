@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>EVG Elie Berdugo — Amsterdam 2026</title>
 <meta name="description" content="Dispos, budget et activités : on organise l'EVG d'Elie à Amsterdam. À toi de répondre !">
@@ -100,17 +100,34 @@
 
 <section id="activites">
   <h2>🗳️ Les activités : votez !</h2>
-  <p class="hint">On ne pourra pas tout faire. Vote 😍 ou 🙅 sur chaque idée : les plus plébiscitées forment le <b>podium</b>, et le prix s'ajuste au nombre de participants.</p>
+  <p class="hint">On ne pourra pas tout faire. Glisse chaque idée à <b>droite 😍</b> si ça te tente, à <b>gauche 🙅</b> sinon. Les plus plébiscitées forment le <b>podium</b>, et le prix s'ajuste au nombre de participants.</p>
   <div class="idbar">
     <span>Tu votes en tant que :</span>
-    <input class="idn-prenom" placeholder="Prénom *" aria-label="Prénom" maxlength="40" autocomplete="given-name"><input class="idn-nom" placeholder="Nom *" aria-label="Nom" maxlength="40" autocomplete="family-name">
+    <input class="idn-prenom" placeholder="Prénom *" aria-label="Prénom" maxlength="40" autocomplete="given-name" enterkeyhint="next"><input class="idn-nom" placeholder="Nom *" aria-label="Nom" maxlength="40" autocomplete="family-name" enterkeyhint="done">
     <span id="voteProgress" class="chip"></span>
+  </div>
+  <div class="modeSwitch" role="tablist" aria-label="Mode de vote">
+    <button type="button" role="tab" data-mode="swipe" class="on">🃏 Swipe</button>
+    <button type="button" role="tab" data-mode="liste">📋 Liste</button>
+  </div>
+
+  <div id="swipeView">
+    <div id="deck" class="deck" tabindex="0" aria-label="Paquet d'activités : flèche droite pour aimer, flèche gauche pour refuser"></div>
+    <div class="deckBtns">
+      <button type="button" id="btnUndo" class="rbtn small" aria-label="Annuler le dernier vote" title="Annuler">↩</button>
+      <button type="button" id="btnNo" class="rbtn no" aria-label="Bof, pas pour moi">🙅</button>
+      <button type="button" id="btnSkip" class="rbtn small" aria-label="Passer" title="Passer">⏭</button>
+      <button type="button" id="btnYes" class="rbtn yes" aria-label="Grave, ça me tente">😍</button>
+    </div>
+    <p class="deckHint">← Bof &nbsp;·&nbsp; Grave →</p>
   </div>
 
   <div id="podium" class="podium" aria-live="polite"></div>
 
-  <div id="catFilter" class="filters"></div>
-  <div id="actGrid" class="actGrid"></div>
+  <div id="listView" hidden>
+    <div id="catFilter" class="filters"></div>
+    <div id="actGrid" class="actGrid"></div>
+  </div>
 </section>
 
 <section>
@@ -135,6 +152,7 @@
   <p id="defiResult" class="defiResult"></p>
 </section>
 
+<nav class="bottomNav" aria-label="Navigation rapide"><a href="#rsvp">📝<span>Répondre</span></a><a href="#activites">🗳️<span>Voter <i id="navTodo"></i></span></a><a href="#podium">🏆<span>Podium</span></a></nav>
 <footer>Fait avec amour, mauvaise foi et Heineken. Elie, on t'aime (un peu). ❤️<br><a href="/admin" class="adminLink">orga</a></footer>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <script src="data.js"></script>

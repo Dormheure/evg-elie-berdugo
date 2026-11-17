@@ -14,7 +14,7 @@ const okUrl = u => /^https?:\/\//i.test(u || '') ? u : '';
 $('titre').textContent = S.titre; $('sousTitre').textContent = S.sousTitre;
 $('marquee').textContent = `🚨 EVG DU DOCTEUR ${S.nom.toUpperCase()} 🚨 AMSTERDAM 🚨 ON NE CHOISIT PAS SES AMIS, ON LES SUBIT 🚨 `.repeat(6);
 const photo = (p, big) => p.fichier
-  ? `<img src="photos/${encodeURI(p.fichier)}" alt="${safe(p.legende||S.nom)}" ${big?'fetchpriority="high"':'loading="lazy"'} decoding="async">`
+  ? `<img src="photos/${big ? '' : 'thumbs/'}${encodeURI(p.fichier)}" alt="${safe(p.legende||S.nom)}" ${big?'fetchpriority="high"':'loading="lazy"'} decoding="async">`
   : `<div class="ph"><span>${big?'🤓':'🤡'}</span>Photo d'${safe(S.nom.split(' ')[0])}<br>à mettre ici</div>`;
 $('heroPhoto').innerHTML = `<div class="frame">${photo({fichier:S.photoPrincipale||S.photos[0]?.fichier||'',legende:S.nom},true)}</div>`;
 $('gallery').innerHTML = S.photos.map(p=>`<figure class="polaroid"><div class="img">${photo(p)}</div><figcaption>${safe(p.legende)}</figcaption></figure>`).join('');
@@ -27,9 +27,9 @@ const me = store.get('evg_me', { prenom: '', nom: '' });
 for (const c of ['prenom', 'nom']) {
   const inputs = [...document.querySelectorAll('.idn-' + c)];
   inputs.forEach(i => { i.value = me[c] || '';
-    i.addEventListener('input', () => { me[c] = i.value; store.set('evg_me', me); inputs.forEach(o => { if (o !== i) o.value = i.value; }); });
+    i.addEventListener('input', () => { me[c] = i.value; store.set('evg_me', me); inputs.forEach(o => { if (o !== i) o.value = i.value; }); if (typeof renderDeck === 'function') renderDeck(); });
     // autre personne : on oublie tout de suite les votes de la précédente (sinon un clic rapide les "annule")
-    i.addEventListener('change', () => { MINE = {}; if (ACTS.length) renderActivities(); if (me.prenom && me.nom) loadActivities().catch(() => {}); }); });
+    i.addEventListener('change', () => { MINE = {}; if (ACTS.length) renderActivities(); if (me.prenom && me.nom) { loadActivities().catch(() => {}); if (i.closest('#activites') && c === 'nom' && MODE === 'swipe') setTimeout(() => document.querySelector('.modeSwitch').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); } }); });
 }
 
 // ---------- Config (dates, lieu, budget…) ----------
@@ -156,6 +156,7 @@ function renderActivities() {
       <div class="votes"><button type="button" class="vy ${v==='oui'?'on':''}" aria-pressed="${v==='oui'}" data-id="${safe(a.id)}" data-v="oui">😍 Grave <i>${c.oui}</i></button><button type="button" class="vn ${v==='non'?'on':''}" aria-pressed="${v==='non'}" data-id="${safe(a.id)}" data-v="non">🙅 Bof <i>${c.non}</i></button></div></article>`; }).join('')
     : `<p class="hint">${CAT.startsWith('À voter') ? '🎉 Tu as voté sur toutes les activités, merci !' : 'Rien ici.'}</p>`;
   $('actGrid').querySelectorAll('.votes button').forEach(b => b.onclick = () => vote(b.dataset.id, b.dataset.v));
+  renderDeck(); renderNav();
 }
 async function vote(id, v) {
   if (!me.prenom.trim() || !me.nom.trim()) { toast('Entre ton prénom et ton nom (en haut de la section) avant de voter 🙂'); document.querySelector(`#activites .idn-${me.prenom.trim() ? 'nom' : 'prenom'}`).focus(); return; }
@@ -170,6 +171,67 @@ async function vote(id, v) {
     .catch(e => toast('⚠️ ' + e.message))
     .finally(() => { if (--pending === 0) loadActivities().catch(() => {}); });
 }
+
+// ---------- Mode swipe (cartes à glisser) ----------
+let MODE = store.get('evg_mode', 'swipe'), DECK = [], HIST = [], DRAG = false, FLYING = false;
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function setMode(m) {
+  MODE = m; store.set('evg_mode', m);
+  $('swipeView').hidden = m !== 'swipe'; $('listView').hidden = m !== 'liste';
+  document.querySelectorAll('.modeSwitch button').forEach(b => { b.classList.toggle('on', b.dataset.mode === m); b.setAttribute('aria-selected', b.dataset.mode === m); });
+  if (m === 'swipe') renderDeck();
+}
+document.querySelectorAll('.modeSwitch button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+function renderNav() { const n = ACTS.filter(a => a.statut !== 'refusee' && !MINE[a.id]).length; $('navTodo').textContent = n ? `(${n})` : '✓'; }
+function remaining() {
+  if (!DECK.length) DECK = shuffle(ACTS.map(a => a.id));            // ordre aléatoire (pas de biais), fixé pour la session
+  else { const known = new Set(DECK); ACTS.forEach(a => { if (!known.has(a.id)) DECK.push(a.id); }); }
+  return DECK.map(id => ACTS.find(a => a.id === id)).filter(a => a && a.statut !== 'refusee' && !MINE[a.id]);
+}
+const cardHTML = (a) => `<div class="scard" data-id="${safe(a.id)}">
+  <span class="stampR" aria-hidden="true">GRAVE 😍</span><span class="stampL" aria-hidden="true">BOF 🙅</span>
+  <div class="sem" aria-hidden="true">${safe(a.emoji)}</div><h3>${safe(a.nom)}</h3><span class="cat">${safe(a.categorie)} · ${safe(a.duree || '')}</span>
+  <p>${safe(a.description)}</p>
+  <div class="sprice"><b>${euro(P.pp(a, NB))}</b>/pers. <small>à ${NB} personnes</small><small>${safe(P.bareme(a))}${a.verifie === false ? ' · prix estimé' : ''}${okUrl(a.source) ? ` · <a href="${safe(okUrl(a.source))}" target="_blank" rel="noopener noreferrer">infos ↗</a>` : ''}</small></div></div>`;
+function renderDeck() {
+  const el = $('deck'); if (!el || DRAG || FLYING) return;
+  if (!ACTS.length) { el.innerHTML = '<div class="scard gate"><p>Chargement des activités…</p></div>'; return; }
+  const left = remaining(), n = left.length;
+  $('btnUndo').disabled = !HIST.length;
+  const off = !(me.prenom.trim() && me.nom.trim()) || !n;
+  ['btnNo', 'btnYes', 'btnSkip'].forEach(i => $(i).disabled = off);
+  if (!(me.prenom.trim() && me.nom.trim())) { el.innerHTML = '<div class="scard gate"><div class="sem">👆</div><h3>Qui es-tu ?</h3><p>Entre ton <b>prénom</b> et ton <b>nom</b> juste au-dessus pour commencer à voter.</p></div>'; return; }
+  if (!n) { el.innerHTML = `<div class="scard gate"><div class="sem">🎉</div><h3>Tu as tout voté, merci !</h3><p>${ACTS.filter(a => MINE[a.id] === 'oui').length} 😍 · ${ACTS.filter(a => MINE[a.id] === 'non').length} 🙅</p><a class="btn small" href="#podium">Voir le podium 🏆</a> <button type="button" class="btn small ghost" id="seeList">Revoir mes votes</button></div>`; $('seeList').onclick = () => setMode('liste'); return; }
+  el.innerHTML = (n > 2 ? `<div class="scard back2"></div>` : '') + (n > 1 ? `<div class="scard back1"></div>` : '') + cardHTML(left[0]);
+  attachDrag(el.querySelector('.scard[data-id]'));
+}
+function attachDrag(c) {
+  let sx = 0, sy = 0, dx = 0, on = false;
+  const stamps = () => { c.querySelector('.stampR').style.opacity = Math.min(1, Math.max(0, dx / 90)); c.querySelector('.stampL').style.opacity = Math.min(1, Math.max(0, -dx / 90)); };
+  c.addEventListener('pointerdown', e => { if (FLYING || e.target.closest('a,button')) return; on = true; DRAG = true; dx = 0; sx = e.clientX; sy = e.clientY; c.style.transition = 'none'; try { c.setPointerCapture(e.pointerId); } catch {} });
+  c.addEventListener('pointermove', e => { if (!on) return; dx = e.clientX - sx; c.style.transform = `translate(${dx}px, ${(e.clientY - sy) * .15}px) rotate(${dx / 16}deg)`; stamps(); });
+  const end = () => { if (!on) return; on = false; DRAG = false;
+    if (Math.abs(dx) > 90) decide(c, dx > 0 ? 'oui' : 'non');
+    else { c.style.transition = 'transform .25s'; c.style.transform = ''; dx = 0; stamps(); } };
+  c.addEventListener('pointerup', end); c.addEventListener('pointercancel', end);
+}
+// vote + animation de sortie de la carte
+function decide(c, v) {
+  const id = c.dataset.id; if (FLYING) return;
+  if (!(me.prenom.trim() && me.nom.trim())) { toast('Entre ton prénom et ton nom pour voter 🙂'); return; }
+  FLYING = true; const dir = v === 'oui' ? 1 : -1;
+  c.style.transition = 'transform .28s ease-in, opacity .28s'; c.style.transform = `translate(${dir * innerWidth * 1.1}px, -30px) rotate(${dir * 28}deg)`; c.style.opacity = '0';
+  c.querySelector(v === 'oui' ? '.stampR' : '.stampL').style.opacity = 1;
+  if (navigator.vibrate) try { navigator.vibrate(12); } catch {}
+  setTimeout(() => { FLYING = false; HIST.push({ id, v }); vote(id, v); }, 260);
+}
+const topCard = () => document.querySelector('#deck .scard[data-id]');
+$('btnYes').onclick = () => { const c = topCard(); if (c) decide(c, 'oui'); };
+$('btnNo').onclick = () => { const c = topCard(); if (c) decide(c, 'non'); };
+$('btnSkip').onclick = () => { const c = topCard(); if (!c || FLYING) return; DECK = DECK.filter(i => i !== c.dataset.id).concat(c.dataset.id); renderDeck(); };
+$('btnUndo').onclick = () => { const h = HIST.pop(); if (!h) return; DECK = [h.id].concat(DECK.filter(i => i !== h.id)); if (MINE[h.id] === h.v) vote(h.id, h.v); renderDeck(); };
+$('deck').addEventListener('keydown', e => { const c = topCard(); if (!c) return; if (e.key === 'ArrowRight') { e.preventDefault(); decide(c, 'oui'); } else if (e.key === 'ArrowLeft') { e.preventDefault(); decide(c, 'non'); } });
+setMode(MODE);
 
 loadConfig().catch(() => { $('intro').textContent = 'Impossible de charger les infos pour le moment, recharge la page.'; });
 loadActivities().catch(() => { $('actGrid').innerHTML = '<p class="hint">Activités indisponibles pour le moment, recharge la page.</p>'; });
