@@ -22,12 +22,11 @@ $('diagnostic').innerHTML = S.diagnostic.map(([a,b])=>`<tr><th scope="row">${saf
 
 // ---------- Session (le middleware garantit qu'on est connecté ; l'API le confirme) ----------
 let ME = null, AUTHLOAD = true, HASRSVP = null;   // AUTHLOAD : vrai tant que mes votes ne sont pas chargés
-const initials = m => ((m.prenom || '?')[0] + (m.role === 'admin' ? '' : (m.nom || '')[0] || '')).toUpperCase();
 function renderAccount() {
-  $('avatar').textContent = initials(ME); $('avatar').classList.toggle('adm', ME.role === 'admin');
-  $('moiTitle').textContent = `Salut ${ME.prenom} 👋`;
-  $('navOrga').hidden = ME.role !== 'admin'; document.body.classList.toggle('isAdmin', ME.role === 'admin');
+  $('whoName').textContent = ME.prenom; $('orgaBtn').hidden = ME.role !== 'admin';
+  $('rsvpWho').textContent = `Tu réponds en tant que ${ME.prenom} ${ME.nom}`;
 }
+document.querySelector('.devBox').addEventListener('toggle', e => { if (e.target.open) loadDevices(); });
 $('logoutBtn').onclick = async () => { if (!confirm('Te déconnecter de cet appareil ?')) return; try { await postJSON('/api/auth', { action: 'logout' }); } catch {} location.replace('/login'); };
 $('changePin').onclick = async () => {
   const old = prompt('Ton code actuel :'); if (old === null) return; const nw = prompt('Ton nouveau code (4 caractères minimum) :'); if (nw === null) return;
@@ -324,75 +323,20 @@ $('ideaForm').addEventListener('submit', async e => {
   btn.disabled = false;
 });
 
-// ---------- À faire (accueil) ----------
-function renderTodo() {
-  const n = ACTS.filter(a => a.statut !== 'refusee' && !MINE[a.id]).length, steps = [];
-  if (HASRSVP === false) steps.push(['📝', 'Donne ta réponse (dispos, budget)', '#/moi']);
-  if (ACTS.length && n) steps.push(['🗳️', `Vote les activités (${n} restantes)`, '#/vote']);
-  if (!steps.length && HASRSVP) steps.push(['🦄', 'Tout est fait ! Va rêver dans le Guide', '#/guide']);
-  $('todo').innerHTML = steps.map(([e, t, h]) => `<a class="todoItem" href="${h}"><span>${e}</span><b>${t}</b><i>→</i></a>`).join('');
-  $('ctaRsvp').textContent = HASRSVP ? 'Ma réponse ✅' : 'Je réponds 📝';
-}
+// ---------- Après ma réponse : lien direct vers le vote ----------
+function renderTodo() { $('goVote').hidden = !HASRSVP; }
 
-// ---------- Formules 48 h + Guide ----------
-const G = window.GUIDE, GCAT = Object.fromEntries(G.cats.map(c => [c.id, c]));
-const favs = new Set(store.get('evg_favs', []));
-let GSEL = 'tout', GFAV = false;
-function renderFormules() {
-  $('formules').innerHTML = G.formules.map(f => `<article class="formule f-${f.id}"><div class="fHead"><span class="fE">${f.e}</span><div><h3>${safe(f.t)}</h3><b class="fPrix">≈ ${f.prix} €<small>/pers. tout compris hors transport</small></b></div></div>
-    <p>${safe(f.pitch)}</p><div class="fDays"><div><h4>Jour 1</h4><ol>${f.j1.map(x => `<li>${safe(x)}</li>`).join('')}</ol></div><div><h4>Jour 2</h4><ol>${f.j2.map(x => `<li>${safe(x)}</li>`).join('')}</ol></div></div></article>`).join('');
-}
-function renderGuide() {
-  const q = norm($('guideQ').value);
-  $('guideCats').innerHTML = [{ id: 'tout', e: '✨', t: 'Tout', s: `${G.items.length} idées` }, ...G.cats].map(c => `<button type="button" class="gCat ${c.id === GSEL ? 'on' : ''}" data-g="${c.id}" aria-pressed="${c.id === GSEL}"><span>${c.e}</span><b>${safe(c.t)}</b><small>${safe(c.s)}</small></button>`).join('');
-  $('guideCats').querySelectorAll('[data-g]').forEach(b => b.onclick = () => { GSEL = b.dataset.g; renderGuide(); });
-  $('guideFav').classList.toggle('on', GFAV); $('guideFav').textContent = `❤️ Mes favoris (${favs.size})`;
-  const key = it => it.cat + '|' + it.t;
-  const list = G.items.filter(it => (GSEL === 'tout' || it.cat === GSEL) && (!GFAV || favs.has(key(it))) && (!q || norm(it.t + ' ' + it.d + ' ' + (it.tags || []).join(' ')).includes(q)));
-  $('guideList').innerHTML = list.map(it => { const k = key(it), tip = !it.budget && (it.tags || []).some(t => ['astuce', 'important'].includes(t));
-    return `<article class="gItem ${tip ? 'tip' : ''}"><div class="gTop"><span class="gE">${it.e}</span><div class="gT"><small>${safe(GCAT[it.cat].e + ' ' + GCAT[it.cat].t)}</small><h3>${safe(it.t)}</h3></div>
-      ${tip ? '' : `<button type="button" class="favBtn ${favs.has(k) ? 'on' : ''}" data-f="${safe(k)}" aria-pressed="${favs.has(k)}" aria-label="Favori">${favs.has(k) ? '❤️' : '🤍'}</button>`}</div>
-      <p>${safe(it.d)}</p>
-      <div class="gMeta">${it.budget ? `<span class="gBudget">💶 ${safe(it.budget)}</span>` : ''}${(it.tags || []).map(t => `<span class="tag">${safe(t)}</span>`).join('')}${it.verif ? '<span class="tag warn">à vérifier</span>' : ''}</div>
-      <div class="gAct">${it.link ? `<a class="btn small ghost" href="${safe(it.link)}" target="_blank" rel="noopener noreferrer">Voir ↗</a>` : ''}${ME.role === 'admin' && !tip ? `<button type="button" class="btn small" data-push="${safe(k)}">→ Mettre au vote</button>` : ''}</div></article>`; }).join('') || '<p class="hint">Rien ici. Ajoute des favoris avec 🤍.</p>';
-  $('guideList').querySelectorAll('[data-f]').forEach(b => b.onclick = () => { favs.has(b.dataset.f) ? favs.delete(b.dataset.f) : favs.add(b.dataset.f); store.set('evg_favs', [...favs]); renderGuide(); });
-  $('guideList').querySelectorAll('[data-push]').forEach(b => b.onclick = () => pushToVote(G.items.find(it => key(it) === b.dataset.push)));
-}
-const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-$('guideQ').addEventListener('input', renderGuide);
-$('guideFav').onclick = () => { GFAV = !GFAV; renderGuide(); };
-// Orga : un élément du guide devient une activité votable (prix = bas de la fourchette « /pers. »)
-async function pushToVote(it) {
-  const pp = parseFloat(((it.budget || '').match(/\d[\d\s]*/) || ['0'])[0].replace(/\s/g, '')) || 0;
-  const perGroup = /en tout|la suite|la nuit|la chambre|maisonnette/.test(it.budget || '');
-  const a = { id: norm(it.t).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) + '-g', emoji: it.e, nom: it.t, categorie: { reve: 'Insolite & culture', bizarre: 'Insolite & culture', nuit: 'Soirée', action: 'Sport & action', casher: 'Boire & manger', piege: 'Jeux & défis', dodo: 'Autre', shabbat: 'Autre' }[it.cat] || 'Autre',
-    duree: '', description: it.d, prix: perGroup ? { type: 'group', prix: pp, capacite: 20 } : { type: 'pp', tiers: [{ min: 1, pp }] }, prixNote: it.budget, source: it.link || '', verifie: false, statut: 'attente' };
-  if (!confirm(`Ajouter « ${it.t} » aux activités à voter ?`)) return;
-  try { await api('/api/admin?col=activities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(a) }); toast('✅ Ajoutée au vote'); loadActivities().catch(() => {}); } catch (e) { toast('⚠️ ' + e.message); }
-}
-
-// ---------- Navigation (une seule app : participants et orgas) ----------
-const PAGES = ['accueil', 'guide', 'vote', 'idees', 'defis', 'moi', 'orga'];
+// ---------- Navigation : le site, ou l'espace orga (réservé aux orgas) ----------
 let adminLoaded = false;
 function route() {
-  let p = (location.hash.match(/^#\/?([a-z]+)/) || [])[1] || 'accueil';
-  if (!PAGES.includes(p) || (p === 'orga' && ME?.role !== 'admin')) p = 'accueil';
-  document.querySelectorAll('.page').forEach(s => s.hidden = s.dataset.page !== p);
-  document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === p));
-  $('avatar').classList.toggle('on', p === 'moi');
-  document.body.dataset.page = p; scrollTo(0, 0); EVGSec.page(p);
-  if (p === 'guide') renderGuide();
-  if (p === 'moi') loadDevices();
-  if (p === 'orga') { if (!adminLoaded) { adminLoaded = true; const sc = document.createElement('script'); sc.src = 'admin.js'; sc.onload = () => EVGAdmin.start(ME); document.body.appendChild(sc); } else EVGAdmin.refresh(); }
+  const orga = location.hash === '#/orga' && ME?.role === 'admin';
+  $('main').hidden = orga; document.querySelector('.orgaPage').hidden = !orga; document.querySelector('.bottomNav').hidden = orga;
+  EVGSec.page(orga ? 'orga' : 'site');
+  if (!orga) return;
+  scrollTo(0, 0);
+  if (!adminLoaded) { adminLoaded = true; const sc = document.createElement('script'); sc.src = 'admin.js'; sc.onload = () => EVGAdmin.start(ME); document.body.appendChild(sc); } else EVGAdmin.refresh();
 }
 window.addEventListener('hashchange', route);
-let topT;
-function topCountdown() {
-  clearInterval(topT); if (!CFG) return;
-  const t0 = new Date(CFG.dateFinale || (CFG.deadline + 'T23:59')).getTime();
-  const tick = () => { const r = t0 - Date.now(); $('topCd').textContent = r > 0 ? `${CFG.dateFinale ? '✈️' : '⏳'} J-${Math.ceil(r / 864e5)}` : ''; };
-  tick(); topT = setInterval(tick, 60000);
-}
 
 // ---------- Accueil obligatoire à la 1re connexion : dates, lieu, adresse ----------
 const ONB = { step: 0, dispos: {}, lieuOk: '', lieuIdee: '', depart: '', adresse: '', transport: 'peu-importe' };
@@ -438,7 +382,7 @@ async function onbNext() {
     await postJSON('/api/rsvp', { statut, dispos: ONB.dispos, lieuOk: ONB.lieuOk, lieuIdee: ONB.lieuOk === 'autre' ? ONB.lieuIdee : '', depart: ONB.depart, adresse: ONB.adresse, transport: ONB.transport });
     $('onb').hidden = true; document.body.classList.remove('onbOpen'); HASRSVP = true;
     toast(statut === 'non' ? '😭 Noté. Tu peux changer d\'avis dans Mon espace.' : '🎉 Merci ! Maintenant : vote les activités 🗳️');
-    loadMyRsvp(); loadConfig().catch(() => {}); location.hash = statut === 'non' ? '#/accueil' : '#/vote';
+    loadMyRsvp(); loadConfig().catch(() => {}); setTimeout(() => $(statut === 'non' ? 'compte' : 'activites').scrollIntoView({ behavior: 'smooth' }), 100);
   } catch (e) { err(e.message); }
   $('onbNext').disabled = false;
 }
@@ -455,8 +399,8 @@ function maybeOnboard() {
   if (s.me.status !== 'active') { location.replace('/login'); return; }
   ME = { ...s.me, sid: s.sid };
   EVGSec.start(ME, s.security);
-  renderAccount(); renderFormules(); route();
-  try { await loadConfig(); topCountdown(); } catch { $('intro').textContent = 'Impossible de charger les infos pour le moment, recharge la page.'; }
+  renderAccount(); route();
+  try { await loadConfig(); } catch { $('intro').textContent = 'Impossible de charger les infos pour le moment, recharge la page.'; }
   loadActivities().catch(() => { AUTHLOAD = false; renderDeck(); }); loadIdeas();
   await loadMyRsvp(); maybeOnboard();   // 1re connexion : dates, lieu, adresse avant tout
 })();
