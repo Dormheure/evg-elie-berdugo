@@ -17,7 +17,6 @@ const photo = (p, big) => p.fichier
   ? `<canvas class="wmimg" data-src="photos/${big ? '' : 'thumbs/'}${encodeURI(p.fichier)}" role="img" aria-label="${safe(p.legende||S.nom)}"></canvas>`
   : `<div class="ph"><span>${big?'🤓':'🤡'}</span>Photo d'${safe(S.nom.split(' ')[0])}<br>à mettre ici</div>`;
 $('heroPhoto').innerHTML = `<div class="frame">${photo({fichier:S.photoPrincipale||S.photos[0]?.fichier||'',legende:S.nom},true)}</div>`;
-$('gallery').innerHTML = S.photos.map(p=>`<figure class="polaroid"><div class="img">${photo(p)}</div><figcaption>${safe(p.legende)}</figcaption></figure>`).join('');
 $('diagnostic').innerHTML = S.diagnostic.map(([a,b])=>`<tr><th scope="row">${safe(a)}</th><td>${safe(b)}</td></tr>`).join('');
 
 // ---------- Session (le middleware garantit qu'on est connecté ; l'API le confirme) ----------
@@ -238,37 +237,59 @@ $('btnUndo').onclick = () => { const h = HIST.pop(); if (!h) return; DECK = [h.i
 $('deck').addEventListener('keydown', e => { const c = topCard(); if (!c) return; if (e.key === 'ArrowRight') { e.preventDefault(); decide(c, 'oui'); } else if (e.key === 'ArrowLeft') { e.preventDefault(); decide(c, 'non'); } });
 setMode(MODE);
 
-// ---------- Défis du docteur (data.js + défis ajoutés par les orgas) ----------
+// ---------- Défis du docteur : partagés par tout le groupe (qui a validé, preuve photo, classement) ----------
 const LVL = { 1: ['🌶️', 1], 2: ['🌶️🌶️', 2], 3: ['🌶️🌶️🌶️', 3], 4: ['💀', 5], g: ['👥', 3] };
-let EXTRA = [], DEFIS = [], DONE = new Set(store.get('evg_defis', []).map(k => typeof k === 'number' ? 's' + k : k)), DLVL = 'tous', DPICK = null;
+let EXTRA = [], DEFIS = [], DD = {}, BOARD = [], DLVL = 'tous', DPICK = null, DBUSY = false;
 function buildDefis() { DEFIS = [...S.defis.map((d, i) => ({ k: 's' + i, n: d.n, t: d.t })), ...EXTRA.map(d => ({ k: 'x' + d.id, n: d.n, t: d.t }))].filter(d => LVL[d.n]); }
 const getD = k => DEFIS.find(d => d.k === k);
-const saveDone = () => store.set('evg_defis', [...DONE]);
+async function loadDefis() {
+  try { const r = await api('/api/defis'); DD = r.done || {}; BOARD = r.board || []; } catch {}
+  renderDefis(); drawCard();
+}
 function renderDefis() {
-  const ok = [...DONE].filter(k => getD(k)), pts = ok.reduce((a, k) => a + LVL[getD(k).n][1], 0), max = DEFIS.reduce((a, d) => a + LVL[d.n][1], 0);
+  const ok = DEFIS.filter(d => DD[d.k]), pts = ok.reduce((a, d) => a + LVL[d.n][1], 0), max = DEFIS.reduce((a, d) => a + LVL[d.n][1], 0);
   $('defiScore').textContent = `${pts} / ${max} pts · ${ok.length}/${DEFIS.length} défis`;
-  const lv = [['tous', 'Tous'], ['1', '🌶️'], ['2', '🌶️🌶️'], ['3', '🌶️🌶️🌶️'], ['4', '💀 Hardcore'], ['g', '👥 Groupe']];
+  $('defiBoard').innerHTML = BOARD.length ? `<h3>🏆 Classement des complices</h3><ol>${BOARD.map((b, i) => `<li class="${b.me ? 'me' : ''}"><span class="medal">${['🥇', '🥈', '🥉'][i] || (i + 1)}</span><b>${safe(b.auteur)}</b><span>${b.nb} défi${b.nb > 1 ? 's' : ''}</span><b class="pts">${b.pts} pts</b></li>`).join('')}</ol>` : '<p class="hint">Aucun défi validé pour l\'instant. Le premier qui fait souffrir Elie prend la tête du classement.</p>';
+  const lv = [['tous', 'Tous'], ['afaire', 'À faire'], ['1', '🌶️'], ['2', '🌶️🌶️'], ['3', '🌶️🌶️🌶️'], ['4', '💀'], ['g', '👥']];
   $('defiFilter').innerHTML = lv.map(([k, l]) => `<button type="button" class="chipBtn ${k === DLVL ? 'on' : ''}" aria-pressed="${k === DLVL}" data-k="${k}">${l}</button>`).join('');
   $('defiFilter').querySelectorAll('button').forEach(b => b.onclick = () => { DLVL = b.dataset.k; renderDefis(); });
-  $('defiList').innerHTML = DEFIS.filter(d => DLVL === 'tous' || String(d.n) === DLVL)
-    .map(d => `<li class="${DONE.has(d.k) ? 'done' : ''}"><label><input type="checkbox" data-k="${safe(d.k)}" ${DONE.has(d.k) ? 'checked' : ''}><span class="lv">${LVL[d.n][0]}</span><span class="tx">${safe(d.t)}</span></label></li>`).join('');
-  $('defiList').querySelectorAll('input').forEach(c => c.onchange = () => { c.checked ? DONE.add(c.dataset.k) : DONE.delete(c.dataset.k); saveDone(); if (DPICK === c.dataset.k && c.checked) DPICK = null; renderDefis(); drawCard(); });
+  const show = DEFIS.filter(d => DLVL === 'tous' || (DLVL === 'afaire' ? !DD[d.k] : String(d.n) === DLVL));
+  $('defiList').innerHTML = show.map(d => { const x = DD[d.k], p = LVL[d.n][1];
+    return `<li class="${x ? 'done' : ''}"><div class="dl"><span class="lv">${LVL[d.n][0]}</span><span class="tx">${safe(d.t)}</span></div>
+      <div class="da">${x ? `<span class="by">✅ ${safe(x.auteur)} · +${p}</span>${x.proof ? `<button type="button" class="mini2" data-proof="${safe(x.proof)}" aria-label="Voir la preuve">📸 preuve</button>` : (x.mine ? `<button type="button" class="mini2" data-addproof="${safe(d.k)}">📸 ajouter la preuve</button>` : '')}${x.canUndo ? `<button type="button" class="mini2 ghost" data-undo="${safe(d.k)}">annuler</button>` : ''}`
+      : `<button type="button" class="mini2 go" data-ok="${safe(d.k)}">✅ Fait (+${p})</button><button type="button" class="mini2" data-okp="${safe(d.k)}">📸 Fait + preuve</button>`}</div></li>`; }).join('') || '<li class="hint">Rien ici.</li>';
+  const L = (sel, fn) => $('defiList').querySelectorAll(sel).forEach(fn);
+  L('[data-ok]', b => b.onclick = () => validateDefi(b.dataset.ok, false));
+  L('[data-okp]', b => b.onclick = () => validateDefi(b.dataset.okp, true));
+  L('[data-undo]', b => b.onclick = () => { if (confirm('Annuler la validation de ce défi ?')) defiPost({ action: 'undo', k: b.dataset.undo }); });
+  L('[data-proof]', b => b.onclick = () => openLb(`/api/album?img=${encodeURIComponent(b.dataset.proof)}`, 'Preuve'));
+  L('[data-addproof]', b => b.onclick = async () => { const d = getD(b.dataset.addproof); const id = await pickPhoto({ kind: 'proof', defi: d.k, cap: 'Preuve : ' + d.t.slice(0, 90) }); if (id) { await defiPost({ action: 'proof', k: d.k, proof: id }); loadAlbum(); } });
+}
+async function defiPost(body) { try { await postJSON('/api/defis', body); } catch (e) { toast('⚠️ ' + e.message); } await loadDefis(); }
+async function validateDefi(k, withProof) {
+  if (DBUSY) return; const d = getD(k); if (!d) return; DBUSY = true;
+  try {
+    let proof = '';
+    if (withProof) { proof = await pickPhoto({ kind: 'proof', defi: k, cap: 'Preuve : ' + d.t.slice(0, 90) }); if (!proof) return; }
+    await postJSON('/api/defis', { action: 'done', k, pts: LVL[d.n][1], proof });
+    if (DPICK === k) DPICK = null;
+    toast(`🔥 +${LVL[d.n][1]} pts pour toi ! ${proof ? '' : 'Ajoute la preuve photo quand tu peux.'}`);
+  } catch (e) { toast('⚠️ ' + e.message); }
+  finally { DBUSY = false; await loadDefis(); if (withProof) loadAlbum(); }
 }
 function drawCard() {
-  const c = $('defiCard'); if (DPICK === null || !getD(DPICK)) { if (!c.dataset.msg) c.hidden = true; return; }
+  const c = $('defiCard'); if (DPICK === null || !getD(DPICK) || DD[DPICK]) { if (!c.dataset.msg) c.hidden = true; if (DD[DPICK]) DPICK = null; return; }
   const d = getD(DPICK), p = LVL[d.n][1]; c.hidden = false; c.dataset.msg = '';
-  c.innerHTML = `<span class="lv">${LVL[d.n][0]}</span><p>${safe(d.t)}</p><div class="row2c"><button type="button" class="btn small" id="dOk">✅ Fait ! (+${p} pt${p > 1 ? 's' : ''})</button><button type="button" class="btn small ghost" id="dNext">🔁 Autre défi</button></div>`;
-  $('dOk').onclick = () => { DONE.add(DPICK); saveDone(); DPICK = null; renderDefis(); drawCard(); toast('🔥 Bien joué ! Pense à la preuve photo.'); };
-  $('dNext').onclick = pickDefi;
+  c.innerHTML = `<span class="lv">${LVL[d.n][0]}</span><p>${safe(d.t)}</p><div class="row2c"><button type="button" class="btn small" id="dOk">✅ Fait ! (+${p})</button><button type="button" class="btn small" id="dOkP">📸 Fait + preuve</button><button type="button" class="btn small ghost" id="dNext">🔁 Autre défi</button></div>`;
+  $('dOk').onclick = () => validateDefi(DPICK, false); $('dOkP').onclick = () => validateDefi(DPICK, true); $('dNext').onclick = pickDefi;
 }
 function pickDefi() {
-  const left = DEFIS.filter(d => !DONE.has(d.k) && (DLVL === 'tous' || String(d.n) === DLVL)).map(d => d.k);
+  const left = DEFIS.filter(d => !DD[d.k] && (DLVL === 'tous' || DLVL === 'afaire' || String(d.n) === DLVL)).map(d => d.k);
   if (!left.length) { DPICK = null; $('defiCard').hidden = false; $('defiCard').dataset.msg = '1'; $('defiCard').innerHTML = '<p>🏆 Tous les défis de cette catégorie sont faits. Elie est brisé.</p>'; return; }
   let n; do { n = left[Math.random() * left.length | 0]; } while (left.length > 1 && n === DPICK);
   DPICK = n; drawCard(); $('defiCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 $('randDefi').onclick = pickDefi;
-$('defiReset').onclick = () => { if (confirm('Remettre tous les défis à zéro sur cet appareil ?')) { DONE = new Set(); saveDone(); DPICK = null; $('defiCard').dataset.msg = ''; renderDefis(); drawCard(); } };
 buildDefis(); renderDefis();
 
 // ---------- Idées des participants : proposer, liker, commenter ----------
@@ -418,38 +439,112 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) load
   if (s.me.status !== 'active') { location.replace('/login'); return; }
   ME = { ...s.me, sid: s.sid };
   EVGSec.start(ME, s.security);
-  stampPhotos();
+  stampPhotos(); loadAlbum(); loadDefis(); setInterval(() => { if (!document.hidden) { loadDefis(); } }, 20000); a2hsHint();
   renderAccount(); route(); loadAdminBar();
   try { await loadConfig(); } catch { $('intro').textContent = 'Impossible de charger les infos pour le moment, recharge la page.'; }
   loadActivities().catch(() => { AUTHLOAD = false; renderDeck(); }); loadIdeas();
   await loadMyRsvp(); maybeOnboard();   // 1re connexion : dates, lieu, adresse avant tout
 })();
 
-// ---------- Photos tatouées : l'image est dessinée avec le nom de la personne connectée incrusté dedans ----------
-// (aucune image brute dans la page : un appui long, un glisser ou un enregistrement donne une photo nominative)
-function stampPhotos() {
+// ---------- Photos tatouées : dessinées avec le nom de la personne connectée (aucune image brute dans la page) ----------
+// Les fichiers ne se chargent qu'avec l'en-tête du site : ouvrir l'adresse d'une photo dans un onglet est refusé.
+const IMGS = new Map();   // photos déjà téléchargées pendant la visite (changer de filtre ne retélécharge rien)
+function loadImg(url) {
+  if (IMGS.has(url)) return IMGS.get(url);
+  const p = (async () => {
+    const r = await fetch(url, { headers: { 'x-evg': '1' } }); if (!r.ok) throw new Error('photo');
+    const u = URL.createObjectURL(await r.blob());
+    return new Promise((ok, ko) => { const im = new Image(); im.onload = () => ok(im); im.onerror = ko; im.src = u; });
+  })();
+  IMGS.set(url, p); p.catch(() => IMGS.delete(url)); return p;
+}
+function paint(c, im, fit = 'cover') {
+  const d = Math.min(devicePixelRatio || 1, 2), W = Math.max(1, c.clientWidth) * d;
+  const H = fit === 'contain' ? Math.round(W * im.naturalHeight / im.naturalWidth) : Math.max(1, c.clientHeight) * d;
+  c.width = W; c.height = H; const x = c.getContext('2d');
+  const r = Math.max(W / im.naturalWidth, H / im.naturalHeight), w = im.naturalWidth * r, h = im.naturalHeight * r;
+  x.drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
   if (!ME) return;
   const who = `${ME.prenom} ${ME.nom}`.toUpperCase(), day = new Date().toLocaleDateString('fr-FR');
-  const draw = c => {
-    if (c.dataset.done) return; c.dataset.done = '1';
-    const im = new Image(); im.decoding = 'async';
-    im.onload = () => {
-      const d = Math.min(devicePixelRatio || 1, 2), W = Math.max(1, c.clientWidth) * d, H = Math.max(1, c.clientHeight) * d;
-      c.width = W; c.height = H; const x = c.getContext('2d');
-      const r = Math.max(W / im.naturalWidth, H / im.naturalHeight), w = im.naturalWidth * r, h = im.naturalHeight * r;
-      x.drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
-      x.save(); x.translate(W / 2, H / 2); x.rotate(-0.5); x.textAlign = 'center';
-      const fs = Math.max(11, W / 13); x.font = `800 ${fs}px Inter, sans-serif`; x.lineWidth = Math.max(1, fs / 9);
-      for (let k = -3; k <= 3; k++) {
-        const y = k * fs * 2.6, t = k % 2 ? `${day} · CONFIDENTIEL` : who;
-        x.strokeStyle = 'rgba(0,0,0,.28)'; x.strokeText(t, 0, y); x.fillStyle = 'rgba(255,255,255,.42)'; x.fillText(t, 0, y);
-      }
-      x.restore();
-    };
-    im.src = c.dataset.src;
-  };
-  const cs = [...document.querySelectorAll('canvas.wmimg')];
+  x.save(); x.translate(W / 2, H / 2); x.rotate(-0.5); x.textAlign = 'center';
+  const fs = Math.max(11, Math.min(W, H) / 13); x.font = `800 ${fs}px Inter, sans-serif`; x.lineWidth = Math.max(1, fs / 9);
+  const n = Math.ceil(Math.max(W, H) / (fs * 2.6)) + 2;
+  for (let k = -n; k <= n; k++) { const y = k * fs * 2.6, t = k % 2 ? `${day} · CONFIDENTIEL` : who;
+    x.strokeStyle = 'rgba(0,0,0,.28)'; x.strokeText(t, 0, y); x.fillStyle = 'rgba(255,255,255,.42)'; x.fillText(t, 0, y); }
+  x.restore();
+}
+let IO = null;
+function stampPhotos() {
+  if (!ME) return;
+  const draw = c => { if (c.dataset.done) return; c.dataset.done = '1'; loadImg(c.dataset.src).then(im => paint(c, im)).catch(() => { c.dataset.done = ''; }); };
+  const cs = [...document.querySelectorAll('canvas.wmimg:not([data-done])')];
   if (!('IntersectionObserver' in window)) return cs.forEach(draw);
-  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { io.unobserve(e.target); draw(e.target); } }), { rootMargin: '300px' });
-  cs.forEach(c => io.observe(c));
+  IO = IO || new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { IO.unobserve(e.target); draw(e.target); } }), { rootMargin: '400px' });
+  cs.forEach(c => IO.observe(c));
+}
+
+// ---------- Album : vos photos d'Elie + preuves de défis ----------
+let ALBUM = [], GF = 'toutes';
+async function loadAlbum() { try { ALBUM = (await api('/api/album')).photos || []; } catch {} renderGallery(); }
+function renderGallery() {
+  const base = S.photos.filter(p => p.fichier).map(p => ({ src: 'photos/thumbs/' + encodeURI(p.fichier), full: 'photos/' + encodeURI(p.fichier), cap: p.legende, kind: 'base' }));
+  const mine = ALBUM.map(p => ({ id: p.id, src: `/api/album?img=${p.id}&s=t`, full: `/api/album?img=${p.id}`, cap: p.legende, by: p.auteur, kind: p.kind, del: p.canDelete }));
+  const nP = mine.filter(p => p.kind === 'proof').length, nA = mine.filter(p => p.kind === 'album').length;
+  const tabs = [['toutes', `Toutes (${base.length + mine.length})`], ['vous', `Ajoutées par vous (${nA})`], ['preuves', `Preuves de défis (${nP})`]];
+  $('galFilter').innerHTML = tabs.map(([k, l]) => `<button type="button" class="chipBtn ${k === GF ? 'on' : ''}" aria-pressed="${k === GF}" data-g="${k}">${l}</button>`).join('');
+  $('galFilter').querySelectorAll('button').forEach(b => b.onclick = () => { GF = b.dataset.g; renderGallery(); });
+  const list = GF === 'vous' ? mine.filter(p => p.kind === 'album') : GF === 'preuves' ? mine.filter(p => p.kind === 'proof') : [...mine, ...base];
+  $('gallery').innerHTML = list.map((p, i) => `<figure class="polaroid ${p.kind !== 'base' ? 'user' : ''}"><button type="button" class="img" data-i="${i}" aria-label="Agrandir : ${safe(p.cap || 'photo')}"><canvas class="wmimg" data-src="${safe(p.src)}" role="img" aria-label="${safe(p.cap || 'photo d\'Elie')}"></canvas></button>
+    <figcaption>${safe(p.cap || '')}${p.by ? `<small>${p.kind === 'proof' ? '🎯' : '📸'} ${safe(p.by)}</small>` : ''}${p.del ? `<button type="button" class="delPh" data-del="${safe(p.id)}" aria-label="Supprimer cette photo">🗑</button>` : ''}</figcaption></figure>`).join('')
+    || '<p class="hint">Rien ici pour l\'instant. Lance-toi !</p>';
+  $('gallery').querySelectorAll('[data-i]').forEach(b => b.onclick = () => { const p = list[+b.dataset.i]; openLb(p.full, p.cap); });
+  $('gallery').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (!confirm('Supprimer cette photo ?')) return; try { await postJSON('/api/album', { action: 'delete', id: b.dataset.del }); } catch (e) { toast('⚠️ ' + e.message); } loadAlbum(); });
+  stampPhotos();
+}
+
+// ---------- Visionneuse plein écran (tatouée elle aussi) ----------
+async function openLb(url, cap) {
+  $('lb').hidden = false; document.body.classList.add('noscroll'); $('lbCap').textContent = cap || ''; const c = $('lbCanvas'); c.width = 1; c.height = 1;
+  try { const im = await loadImg(url); if (!$('lb').hidden) paint(c, im, 'contain'); } catch { $('lbCap').textContent = 'Photo indisponible.'; }
+}
+const closeLb = () => { $('lb').hidden = true; document.body.classList.remove('noscroll'); };
+$('lb').addEventListener('click', e => { if (e.target.id !== 'lbCanvas') closeLb(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLb(); } });
+
+// ---------- Envoi d'une photo : réduite sur le téléphone (~200 Ko), aperçu, légende ----------
+function pickPhoto({ kind = 'album', defi = '', cap = '' } = {}) {
+  return new Promise(resolve => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    let picked = false; EVGSec.quiet(10 * 60e3);
+    const back = () => setTimeout(() => { if (!picked) { EVGSec.quiet(1500); resolve(null); } }, 1500);
+    window.addEventListener('focus', back, { once: true }); inp.addEventListener('cancel', () => { EVGSec.quiet(1500); resolve(null); });
+    inp.onchange = async () => {
+      picked = true; EVGSec.quiet(4000); const f = inp.files && inp.files[0]; if (!f) return resolve(null);
+      let bmp; try { bmp = await createImageBitmap(f); } catch { try { const u = URL.createObjectURL(f); bmp = await new Promise((ok, ko) => { const im = new Image(); im.onload = () => ok(im); im.onerror = ko; im.src = u; }); } catch { toast('⚠️ Photo illisible (essaie une autre).'); return resolve(null); } }
+      const enc = (max, q) => { const r = Math.min(1, max / Math.max(bmp.width, bmp.height)), c = document.createElement('canvas'); c.width = Math.round(bmp.width * r); c.height = Math.round(bmp.height * r); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); return { url: c.toDataURL('image/jpeg', q), w: c.width, h: c.height, c }; };
+      let full = enc(1600, .82); if (full.url.length > 1000000) full = enc(1280, .72); if (full.url.length > 1000000) full = enc(1024, .65);
+      const thumb = enc(480, .72);
+      // aperçu + légende
+      $('up').hidden = false; document.body.classList.add('noscroll'); $('upTitle').textContent = kind === 'proof' ? '🎯 Ta preuve' : '📸 Ta photo d\'Elie'; $('upCap').value = cap; $('upMsg').textContent = '';
+      const pv = $('upPreview'), r = Math.min(1, 600 / full.w); pv.width = full.w * r; pv.height = full.h * r; pv.getContext('2d').drawImage(full.c, 0, 0, pv.width, pv.height);
+      const done = id => { $('up').hidden = true; document.body.classList.remove('noscroll'); $('upForm').onsubmit = null; resolve(id); };
+      $('upCancel').onclick = () => done(null);
+      $('upForm').onsubmit = async e => {
+        e.preventDefault(); $('upSend').disabled = true; $('upMsg').className = 'formMsg'; $('upMsg').textContent = 'Envoi…';
+        try { const res = await postJSON('/api/album', { action: 'add', full: full.url, thumb: thumb.url, legende: $('upCap').value, kind, defi, w: full.w, h: full.h }); toast(kind === 'proof' ? '📸 Preuve envoyée !' : '📸 Photo ajoutée à la galerie !'); done(res.id); if (kind === 'album') { GF = 'vous'; loadAlbum(); } }
+        catch (err) { $('upMsg').className = 'formMsg err'; $('upMsg').textContent = '⚠️ ' + err.message; }
+        $('upSend').disabled = false;
+      };
+    };
+    inp.click();
+  });
+}
+$('addPhoto').onclick = () => pickPhoto({ kind: 'album' });
+
+// ---------- iPhone : proposer de l'installer sur l'écran d'accueil (une seule fois) ----------
+function a2hsHint() {
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent), standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  if (!ios || standalone || store.get('evg_a2hs', false)) return;
+  setTimeout(() => { $('a2hs').hidden = false; }, 5000);
+  $('a2hsOk').onclick = () => { $('a2hs').hidden = true; store.set('evg_a2hs', true); };
 }

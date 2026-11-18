@@ -24,8 +24,9 @@ window.EVGSec = (() => {
   }
 
   // ---------- Bouclier (flou) ----------
-  let shielded = false;
+  let shielded = false, quietUntil = 0;   // « silence » : pendant le choix d'une photo (le sélecteur de l'iPhone fait perdre le focus)
   function shield(on, why) {
+    if (on && Date.now() < quietUntil) return;
     if (on === shielded) return; shielded = on;
     document.body.classList.toggle('shielded', on); $('shield').hidden = !on;
     if (on && why) report(why);
@@ -93,5 +94,6 @@ window.EVGSec = (() => {
       document.addEventListener('visibilitychange', () => { if (!document.hidden) ping(); });
     },
     page(p) { if (p !== page) { page = p; ping(); } },
+    quiet(ms) { quietUntil = Date.now() + ms; },
   };
 })();

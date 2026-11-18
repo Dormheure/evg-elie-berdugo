@@ -388,3 +388,58 @@ body.decoyed .wm{display:none}
 
 /* photos tatouées (canevas) */
 canvas.wmimg{display:block;width:100%;height:100%;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+
+/* ===== Galerie : album + visionneuse ===== */
+.polaroid button.img{display:block;width:100%;padding:0;margin:0;border:2px solid var(--k);background:var(--o);cursor:zoom-in;aspect-ratio:1;overflow:hidden}
+.polaroid.user{background:#fffbe0}
+.polaroid figcaption small{display:block;font-size:.7rem;opacity:.65;margin-top:3px}
+.delPh{border:0;background:none;font-size:1rem;cursor:pointer;padding:6px;min-height:36px}
+.lb{position:fixed;inset:0;z-index:90;background:rgba(10,10,10,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(14px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom));overscroll-behavior:contain}
+.lb canvas{width:min(100%,900px);max-height:78svh;object-fit:contain;border-radius:10px;background:#222}
+.lb p{color:#fff;font-weight:800;text-align:center;margin:12px 0 0;max-width:600px}
+.lbClose{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;width:46px;height:46px;border-radius:50%;border:3px solid #fff;background:var(--k);color:#fff;font-size:1.2rem;cursor:pointer}
+body.noscroll{overflow:hidden;touch-action:none}
+.sheetBg{position:fixed;inset:0;z-index:91;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;overscroll-behavior:contain}
+.sheet{background:var(--y);width:min(560px,100%);border:4px solid var(--k);border-bottom:0;border-radius:22px 22px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;max-height:92svh;overflow:auto}
+.sheet h3{margin:0;font-family:Bangers;font-size:1.7rem}
+.sheet canvas{width:100%;max-height:42svh;object-fit:contain;border:3px solid var(--k);border-radius:12px;background:#fff}
+.sheet label{display:flex;flex-direction:column;gap:4px;font-weight:800}
+.sheet input{font:600 16px Inter;padding:12px;border:3px solid var(--k);border-radius:12px;width:100%}
+
+/* ===== Défis partagés ===== */
+.board{background:var(--k);color:#fff;border-radius:16px;padding:12px 14px;margin:6px 0 14px}
+.board h3{margin:0 0 6px;font-family:Bangers;font-size:1.5rem;color:var(--y);letter-spacing:.5px}
+.board ol{list-style:none;margin:0;padding:0}
+.board li{display:flex;align-items:center;gap:10px;padding:7px 4px;border-bottom:1px solid #fff2}
+.board li.me{background:#ffe60022;border-radius:8px}
+.board .medal{width:1.8em;text-align:center;font-weight:900}.board li span:nth-child(3){flex:1;opacity:.7;font-size:.8rem}.board .pts{color:var(--y)}
+.defiList li{display:flex;flex-direction:column;gap:8px;padding:12px 2px}
+.defiList .dl{display:flex;gap:10px;align-items:flex-start}
+.defiList .da{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-left:2.6em}
+.defiList li.done .tx{text-decoration:line-through;opacity:.55}
+.defiList .by{font-weight:900;font-size:.85rem;color:#0a7a2f}
+.mini2{font:800 .85rem Inter;border:3px solid var(--k);border-radius:999px;background:#fff;padding:7px 12px;min-height:40px;cursor:pointer}
+.mini2.go{background:#2bd96b}.mini2.ghost{border-color:#0004;opacity:.75}
+
+/* ===== iPhone : appli écran d'accueil, gestes, confort ===== */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+a,button,label,input,select,textarea,.scard{-webkit-tap-highlight-color:transparent}
+button,a,.chipBtn,.rbtn,.seg label{touch-action:manipulation}
+.a2hs{position:fixed;left:10px;right:10px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:45;background:var(--k);color:#fff;border:3px solid var(--y);border-radius:16px;padding:12px 12px 12px 14px;display:flex;gap:10px;align-items:center;font-size:.88rem;line-height:1.35;box-shadow:0 8px 24px #0006}
+.a2hs[hidden]{display:none}
+.a2hs button{flex:none;font:900 .9rem Inter;background:var(--y);color:var(--k);border:0;border-radius:10px;padding:10px 14px;min-height:44px}
+@media (display-mode: standalone){
+  .marquee{padding-top:calc(8px + env(safe-area-inset-top))}
+  body{overscroll-behavior-y:none}
+}
+@media (max-width:700px){
+  .bottomNav a span{font-size:.6rem}
+  .defiList .da{padding-left:0}
+  .mini2{flex:1 1 auto;text-align:center}
+  .board{margin-left:-4px;margin-right:-4px}
+}
+
+/* photo en cours de chargement : reflet animé plutôt qu'un carré plein */
+canvas.wmimg:not([width]){background:linear-gradient(100deg,#f3d35a 30%,#fff3b0 50%,#f3d35a 70%);background-size:300% 100%;animation:shim 1.2s linear infinite}
+@keyframes shim{to{background-position:-150% 0}}
+@media (prefers-reduced-motion:reduce){canvas.wmimg:not([width]){animation:none}}

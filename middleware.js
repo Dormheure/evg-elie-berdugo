@@ -1,6 +1,6 @@
 // Verrou du site : toute page, photo ou script exige une session valide.
 // Seuls la page de connexion et l'API (qui vérifie elle-même) sont accessibles sans compte.
-const PUBLIC = new Set(['/login', '/login.html', '/favicon.svg', '/robots.txt', '/og.jpg']);
+const PUBLIC = new Set(['/login', '/login.html', '/favicon.svg', '/robots.txt', '/og.jpg', '/manifest.webmanifest', '/apple-touch-icon.png', '/icon-512.png']);
 // Robots d'aperçu de lien (WhatsApp, iMessage, Telegram…) : ils reçoivent juste la carte d'aperçu, jamais le contenu
 const BOTS = /WhatsApp|facebookexternalhit|Facebot|TelegramBot|Twitterbot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|Applebot|iMessage|Signal|Viber|Snapchat|Pinterest|redditbot|Googlebot|bingbot/i;
 const PREVIEW = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>🚨 Le Dr Berdugo se marie. On l'opère d'urgence.</title>
@@ -31,7 +31,11 @@ async function validSession(cookieHeader) {
 export default async function middleware(request) {
   const url = new URL(request.url);
   if (url.pathname.startsWith('/api/') || PUBLIC.has(url.pathname)) return next();
-  if (await validSession(request.headers.get('cookie'))) return next();
+  if (await validSession(request.headers.get('cookie'))) {
+    // photos : seul le site peut les charger (pour les dessiner tatouées) ; ouvrir l'adresse dans un onglet ou l'enregistrer = refusé
+    if (url.pathname.startsWith('/photos/') && request.headers.get('x-evg') !== '1') return new Response('Accès direct interdit', { status: 403, headers: { 'Cache-Control': 'no-store' } });
+    return next();
+  }
   if (BOTS.test(request.headers.get('user-agent') || '')) return new Response(PREVIEW, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
   const isPage = (request.headers.get('accept') || '').includes('text/html');
   if (!isPage) return new Response('Accès privé', { status: 401, headers: { 'Cache-Control': 'no-store' } });

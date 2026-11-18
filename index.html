@@ -6,6 +6,13 @@
 <meta name="robots" content="noindex,nofollow">
 <title>EVG Elie Berdugo — Amsterdam 2026</title>
 <meta name="theme-color" content="#ffe600">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Privé">
+<meta name="format-detection" content="telephone=no">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🩺%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -155,8 +162,11 @@
   <table class="dossier" id="diagnostic"></table>
 </section>
 
-<section>
+<section id="photos">
   <h2>📸 Galerie de la honte</h2>
+  <p class="hint">Ajoute tes pires photos d'Elie (et les preuves des défis pendant le séjour). Elles restent privées et chaque photo affichée porte le nom de celui qui la regarde.</p>
+  <div class="row2c left"><button type="button" class="btn" id="addPhoto">➕ Ajouter une photo d'Elie</button></div>
+  <div id="galFilter" class="filters"></div>
   <div class="gallery" id="gallery"></div>
 </section>
 
@@ -168,13 +178,13 @@
 
 <section id="defis">
   <h2>🎯 Les défis du docteur</h2>
-  <p class="hint">À réaliser pendant le séjour. Plus c'est violent, plus ça rapporte : 🌶️ = 1 pt, 🌶️🌶️ = 2 pts, 🌶️🌶️🌶️ = 3 pts, 💀 hardcore = 5 pts, 👥 groupe = 3 pts. Cochez quand c'est fait (preuve photo ou vidéo obligatoire, sinon ça ne compte pas).</p>
+  <p class="hint">À réaliser pendant le séjour. Plus c'est violent, plus ça rapporte : 🌶️ = 1 pt, 🌶️🌶️ = 2 pts, 🌶️🌶️🌶️ = 3 pts, 💀 hardcore = 5 pts, 👥 groupe = 3 pts. Validez quand c'est fait, avec une photo de preuve : tout le groupe le voit en direct, et celui qui valide marque les points.</p>
   <div class="rules"><b>Règles d'or :</b> la victime, c'est Elie, et lui seul. Zéro fille au programme (pas de strip, pas d'hôtesse) : madame nous surveille. 100 % casher. Les inconnus participent seulement s'ils sont d'accord. Rien d'illégal, personne à l'hôpital (Elie est le seul médecin). Un défi « à boire » se relève aussi avec 20 pompes.</div>
   <div class="defiTop"><span id="defiScore" class="chip"></span><button type="button" class="btn small" id="randDefi">🎰 Défi au hasard</button></div>
+  <div id="defiBoard" class="board" aria-live="polite"></div>
   <div id="defiCard" class="defiCard" aria-live="polite" hidden></div>
   <div id="defiFilter" class="filters"></div>
   <ul id="defiList" class="defiList"></ul>
-  <button type="button" class="linkBtn2" id="defiReset">Remettre le compteur à zéro</button>
 </section>
 
 </div>
@@ -184,9 +194,16 @@
   <main id="view"></main>
 </section>
 
-<nav class="bottomNav" aria-label="Navigation rapide"><a href="#rsvp">📝<span>Répondre</span></a><a href="#activites">🗳️<span>Voter <i id="navTodo"></i></span></a><a href="#idees">💡<span>Idées</span></a><a href="#podium">🏆<span>Podium</span></a></nav>
+<nav class="bottomNav" aria-label="Navigation rapide"><a href="#rsvp">📝<span>Répondre</span></a><a href="#activites">🗳️<span>Voter <i id="navTodo"></i></span></a><a href="#defis">🎯<span>Défis</span></a><a href="#photos">📸<span>Photos</span></a><a href="#idees">💡<span>Idées</span></a></nav>
 <footer>Fait avec amour, mauvaise foi et Heineken. Elie, on t'aime. Un peu. Pour l'instant. ❤️</footer>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<div id="lb" class="lb" hidden role="dialog" aria-modal="true" aria-label="Photo"><button type="button" class="lbClose" id="lbClose" aria-label="Fermer">✕</button><canvas id="lbCanvas"></canvas><p id="lbCap"></p></div>
+<div id="up" class="sheetBg" hidden><form id="upForm" class="sheet" role="dialog" aria-modal="true" aria-label="Envoyer une photo">
+  <h3 id="upTitle">📸 Ta photo</h3><canvas id="upPreview"></canvas>
+  <label>Légende (fais-nous rire)<input id="upCap" maxlength="140" placeholder="Ex : Elie après son 3e shot de jus de pomme" enterkeyhint="send"></label>
+  <div class="row2c"><button type="submit" class="btn" id="upSend">Envoyer</button><button type="button" class="btn ghost" id="upCancel">Annuler</button></div>
+  <p id="upMsg" class="formMsg" role="status"></p></form></div>
+<div id="a2hs" class="a2hs" hidden><span>📲 <b>Mets le site sur ton écran d'accueil</b> : touche <b>Partager</b> <span aria-hidden="true">⬆️</span> puis « <b>Sur l'écran d'accueil</b> ». Il s'ouvrira comme une vraie appli.</span><button type="button" id="a2hsOk" aria-label="Fermer">OK</button></div>
 
 <div id="onb" class="onb" hidden role="dialog" aria-modal="true" aria-labelledby="onbTitle"><div class="onbIn">
   <div class="onbTop"><div class="onbBar"><i id="onbBar"></i></div><span class="onbStep" id="onbStep"></span></div>
