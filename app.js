@@ -439,7 +439,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) load
   if (s.me.status !== 'active') { location.replace('/login'); return; }
   ME = { ...s.me, sid: s.sid };
   EVGSec.start(ME, s.security);
-  stampPhotos(); loadAlbum(); loadDefis(); setInterval(() => { if (!document.hidden) { loadDefis(); } }, 20000); a2hsHint();
+  stampPhotos(); loadAlbum(); loadDefis(); loadFeed(); setInterval(() => { if (!document.hidden) { loadDefis(); loadFeed(); } }, 30000); a2hsHint();
   renderAccount(); route(); loadAdminBar();
   try { await loadConfig(); } catch { $('intro').textContent = 'Impossible de charger les infos pour le moment, recharge la page.'; }
   loadActivities().catch(() => { AUTHLOAD = false; renderDeck(); }); loadIdeas();
@@ -485,17 +485,17 @@ function stampPhotos() {
 
 // ---------- Album : vos photos d'Elie + preuves de défis ----------
 let ALBUM = [], GF = 'toutes';
-async function loadAlbum() { try { ALBUM = (await api('/api/album')).photos || []; } catch {} renderGallery(); }
+async function loadAlbum() { try { const r = await api('/api/album'); ALBUM = r.photos || []; REACTS = r.reacts || {}; } catch {} renderGallery(); }
 function renderGallery() {
-  const base = S.photos.filter(p => p.fichier).map(p => ({ src: 'photos/thumbs/' + encodeURI(p.fichier), full: 'photos/' + encodeURI(p.fichier), cap: p.legende, kind: 'base' }));
-  const mine = ALBUM.map(p => ({ id: p.id, src: `/api/album?img=${p.id}&s=t`, full: `/api/album?img=${p.id}`, cap: p.legende, by: p.auteur, kind: p.kind, del: p.canDelete }));
+  const base = S.photos.filter(p => p.fichier).map(p => ({ rid: 'b-' + p.fichier.replace(/\.jpg$/i, ''), src: 'photos/thumbs/' + encodeURI(p.fichier), full: 'photos/' + encodeURI(p.fichier), cap: p.legende, kind: 'base' }));
+  const mine = ALBUM.map(p => ({ id: p.id, rid: p.id, src: `/api/album?img=${p.id}&s=t`, full: `/api/album?img=${p.id}`, cap: p.legende, by: p.auteur, kind: p.kind, del: p.canDelete }));
   const nP = mine.filter(p => p.kind === 'proof').length, nA = mine.filter(p => p.kind === 'album').length;
   const tabs = [['toutes', `Toutes (${base.length + mine.length})`], ['vous', `Ajoutées par vous (${nA})`], ['preuves', `Preuves de défis (${nP})`]];
   $('galFilter').innerHTML = tabs.map(([k, l]) => `<button type="button" class="chipBtn ${k === GF ? 'on' : ''}" aria-pressed="${k === GF}" data-g="${k}">${l}</button>`).join('');
   $('galFilter').querySelectorAll('button').forEach(b => b.onclick = () => { GF = b.dataset.g; renderGallery(); });
   const list = GF === 'vous' ? mine.filter(p => p.kind === 'album') : GF === 'preuves' ? mine.filter(p => p.kind === 'proof') : [...mine, ...base];
   $('gallery').innerHTML = list.map((p, i) => `<figure class="polaroid ${p.kind !== 'base' ? 'user' : ''}"><button type="button" class="img" data-i="${i}" aria-label="Agrandir : ${safe(p.cap || 'photo')}"><canvas class="wmimg" data-src="${safe(p.src)}" role="img" aria-label="${safe(p.cap || 'photo d\'Elie')}"></canvas></button>
-    <figcaption>${safe(p.cap || '')}${p.by ? `<small>${p.kind === 'proof' ? '🎯' : '📸'} ${safe(p.by)}</small>` : ''}${p.del ? `<button type="button" class="delPh" data-del="${safe(p.id)}" aria-label="Supprimer cette photo">🗑</button>` : ''}</figcaption></figure>`).join('')
+    <figcaption>${safe(p.cap || '')}${p.by ? `<small>${p.kind === 'proof' ? '🎯' : '📸'} ${safe(p.by)}</small>` : ''}${p.del ? `<button type="button" class="delPh" data-del="${safe(p.id)}" aria-label="Supprimer cette photo">🗑</button>` : ''}</figcaption>${reactBar(p.rid)}</figure>`).join('')
     || '<p class="hint">Rien ici pour l\'instant. Lance-toi !</p>';
   $('gallery').querySelectorAll('[data-i]').forEach(b => b.onclick = () => { const p = list[+b.dataset.i]; openLb(p.full, p.cap); });
   $('gallery').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (!confirm('Supprimer cette photo ?')) return; try { await postJSON('/api/album', { action: 'delete', id: b.dataset.del }); } catch (e) { toast('⚠️ ' + e.message); } loadAlbum(); });
@@ -540,6 +540,61 @@ function pickPhoto({ kind = 'album', defi = '', cap = '' } = {}) {
   });
 }
 $('addPhoto').onclick = () => pickPhoto({ kind: 'album' });
+
+
+// ---------- 📣 Quoi de neuf : annonces des orgas + ce qui se passe (badge « nouveau » depuis ta dernière visite) ----------
+let FEED = { annonces: [], items: [] }, FEEDALL = false, SEEN = store.get('evg_seen', '');
+const FEEDTXT = {
+  photo: x => `📸 <b>${safe(x.who)}</b> a ajouté une photo${x.text ? ` : « ${safe(x.text.slice(0, 60))} »` : ''}`,
+  proof: x => `🎯 <b>${safe(x.who)}</b> a posté une preuve de défi`,
+  defi: x => `🔥 <b>${safe(x.who)}</b> a fait souffrir Elie : ${safe((getD(x.k) || {}).t || 'un défi').slice(0, 70)}… <b>+${x.pts}</b>`,
+  idee: x => `💡 <b>${safe(x.who)}</b> a proposé « ${safe(x.text.slice(0, 60))} »`,
+  join: x => `👋 <b>${safe(x.who)}</b> a rejoint la bande`,
+};
+const FEEDGO = { photo: '#photos', proof: '#photos', defi: '#defis', idee: '#idees', join: '#news' };
+async function loadFeed() { try { FEED = await api('/api/feed'); } catch { return; } renderFeed(); }
+function renderFeed() {
+  const isNew = at => SEEN && at > SEEN;
+  $('annonces').innerHTML = FEED.annonces.map(a => `<div class="annonce ${isNew(a.createdAt) ? 'new' : ''}"><div>📣 ${safe(a.texte).replace(/\n/g, '<br>')}</div><small>${safe(a.auteur)} (orga) · ${ago(a.createdAt)}${FEED.canPost ? ` · <button type="button" class="linkBtn2 inline" data-delann="${safe(a.id)}">supprimer</button>` : ''}</small></div>`).join('');
+  const list = FEEDALL ? FEED.items : FEED.items.slice(0, 6);
+  $('feed').innerHTML = list.map(x => `<li class="${isNew(x.at) ? 'new' : ''}"><a href="${FEEDGO[x.type] || '#news'}" ${x.type === 'photo' || x.type === 'proof' ? `data-ph="${safe(x.id)}" data-cap="${safe(x.text)}"` : ''}>${(FEEDTXT[x.type] || (() => ''))(x)}</a><small>${ago(x.at)}</small></li>`).join('')
+    || '<li class="hint">Rien pour l\'instant. Ajoute une photo d\'Elie ou valide un défi pour lancer le fil !</li>';
+  $('feedMore').hidden = FEEDALL || FEED.items.length <= 6;
+  const n = [...FEED.annonces.map(a => a.createdAt), ...FEED.items.map(x => x.at)].filter(isNew).length;
+  $('newsBadge').hidden = !n; $('newsBadge').textContent = n + ' nouveau' + (n > 1 ? 'x' : '');
+  $('annForm').hidden = !FEED.canPost;
+  $('feed').querySelectorAll('[data-ph]').forEach(a => a.onclick = e => { e.preventDefault(); openLb(`/api/album?img=${encodeURIComponent(a.dataset.ph)}`, a.dataset.cap); });
+  $('annonces').querySelectorAll('[data-delann]').forEach(b => b.onclick = async () => { if (!confirm('Supprimer cette annonce ?')) return; try { await postJSON('/api/feed', { action: 'delannounce', id: b.dataset.delann }); } catch (e) { toast('⚠️ ' + e.message); } loadFeed(); });
+}
+$('feedMore').onclick = () => { FEEDALL = true; renderFeed(); };
+$('annForm').addEventListener('submit', async e => {
+  e.preventDefault(); const t = $('annTxt').value.trim(); if (!t) return;
+  try { await postJSON('/api/feed', { action: 'announce', texte: t }); $('annTxt').value = ''; toast('📣 Annonce publiée'); } catch (err) { toast('⚠️ ' + err.message); }
+  loadFeed();
+});
+// « vu » : quand le fil a été affiché à l'écran au moins 2 secondes, les nouveautés ne sont plus signalées à la prochaine visite
+(() => {
+  let t; const now = () => new Date().toISOString();
+  if (!SEEN) store.set('evg_seen', now());   // 1re visite : on ne noie pas la personne sous « nouveau »
+  if (!('IntersectionObserver' in window)) return;
+  new IntersectionObserver(es => es.forEach(e => { clearTimeout(t); if (e.isIntersecting) t = setTimeout(() => store.set('evg_seen', now()), 2000); })).observe($('news'));
+})();
+
+// ---------- Réactions sur les photos (😂 🔥 💀 ❤️, une par personne) ----------
+const EMO = ['😂', '🔥', '💀', '❤️'];
+let REACTS = {};
+function reactBar(id) {
+  const r = REACTS[id] || { counts: {}, mine: '' };
+  return `<div class="reacts">${EMO.map(e => `<button type="button" class="rx ${r.mine === e ? 'on' : ''}" data-rid="${safe(id)}" data-e="${e}" aria-pressed="${r.mine === e}" aria-label="Réagir ${e}">${e}<b>${r.counts[e] || ''}</b></button>`).join('')}</div>`;
+}
+function reactPhoto(id, e) {
+  const r = REACTS[id] || (REACTS[id] = { counts: {}, mine: '' }), next = r.mine === e ? '' : e;
+  if (r.mine) r.counts[r.mine] = Math.max(0, (r.counts[r.mine] || 1) - 1);
+  if (next) r.counts[next] = (r.counts[next] || 0) + 1; r.mine = next;
+  document.querySelectorAll(`.reacts [data-rid="${CSS.escape(id)}"]`).forEach(b => { const on = b.dataset.e === r.mine; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.querySelector('b').textContent = r.counts[b.dataset.e] || ''; });
+  postJSON('/api/album', { action: 'react', id, e: next }).catch(err => toast('⚠️ ' + err.message));
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.rx'); if (b) reactPhoto(b.dataset.rid, b.dataset.e); });
 
 // ---------- iPhone : proposer de l'installer sur l'écran d'accueil (une seule fois) ----------
 function a2hsHint() {
