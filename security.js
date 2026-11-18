@@ -16,10 +16,10 @@ window.EVGSec = (() => {
     c.width = W * d; c.height = H * d; const x = c.getContext('2d'); x.scale(d, d);
     x.translate(W / 2, H / 2); x.rotate(-0.42); x.textAlign = 'center';
     const now = new Date(), stamp = now.toLocaleDateString('fr-FR') + ' ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    x.font = '700 15px Inter, sans-serif'; x.fillStyle = 'rgba(255,255,255,.075)'; x.fillText(`${ME.prenom} ${ME.nom}`.toUpperCase(), 0, -6);
-    x.font = '600 11px Inter, sans-serif'; x.fillStyle = 'rgba(255,255,255,.06)'; x.fillText(`${stamp} · #${ME.sid || ''} · CONFIDENTIEL`, 0, 12);
+    x.font = '700 15px Inter, sans-serif'; x.fillStyle = 'rgba(255,255,255,.16)'; x.fillText(`${ME.prenom} ${ME.nom}`.toUpperCase(), 0, -6);
+    x.font = '600 11px Inter, sans-serif'; x.fillStyle = 'rgba(0,0,0,.11)'; x.fillText(`${stamp} · #${ME.sid || ''} · CONFIDENTIEL`, 0, 12);
     // seconde couche sombre pour rester visible sur les photos claires
-    x.font = '700 15px Inter, sans-serif'; x.fillStyle = 'rgba(0,0,0,.08)'; x.fillText(`${ME.prenom} ${ME.nom}`.toUpperCase(), 1, -5);
+    x.font = '700 15px Inter, sans-serif'; x.fillStyle = 'rgba(0,0,0,.15)'; x.fillText(`${ME.prenom} ${ME.nom}`.toUpperCase(), 1, -5);
     el.style.backgroundImage = `url(${c.toDataURL()})`; el.style.backgroundSize = `${W}px ${H}px`;
   }
 

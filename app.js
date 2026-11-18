@@ -14,7 +14,7 @@ const okUrl = u => /^https?:\/\//i.test(u || '') ? u : '';
 $('titre').textContent = S.titre; $('sousTitre').textContent = S.sousTitre;
 $('marquee').textContent = `🚨 ALERTE : LE DR ${S.nom.toUpperCase()} PERD SA LIBERTÉ 🚨 AMSTERDAM 🚨 ON NE CHOISIT PAS SES AMIS, ON LES SUBIT 🚨 AUCUN MÉDECIN NE SERA BLESSÉ (POUR L'INSTANT) 🚨 `.repeat(6);
 const photo = (p, big) => p.fichier
-  ? `<img src="photos/${big ? '' : 'thumbs/'}${encodeURI(p.fichier)}" alt="${safe(p.legende||S.nom)}" ${big?'fetchpriority="high"':'loading="lazy"'} decoding="async">`
+  ? `<canvas class="wmimg" data-src="photos/${big ? '' : 'thumbs/'}${encodeURI(p.fichier)}" role="img" aria-label="${safe(p.legende||S.nom)}"></canvas>`
   : `<div class="ph"><span>${big?'🤓':'🤡'}</span>Photo d'${safe(S.nom.split(' ')[0])}<br>à mettre ici</div>`;
 $('heroPhoto').innerHTML = `<div class="frame">${photo({fichier:S.photoPrincipale||S.photos[0]?.fichier||'',legende:S.nom},true)}</div>`;
 $('gallery').innerHTML = S.photos.map(p=>`<figure class="polaroid"><div class="img">${photo(p)}</div><figcaption>${safe(p.legende)}</figcaption></figure>`).join('');
@@ -418,8 +418,38 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) load
   if (s.me.status !== 'active') { location.replace('/login'); return; }
   ME = { ...s.me, sid: s.sid };
   EVGSec.start(ME, s.security);
+  stampPhotos();
   renderAccount(); route(); loadAdminBar();
   try { await loadConfig(); } catch { $('intro').textContent = 'Impossible de charger les infos pour le moment, recharge la page.'; }
   loadActivities().catch(() => { AUTHLOAD = false; renderDeck(); }); loadIdeas();
   await loadMyRsvp(); maybeOnboard();   // 1re connexion : dates, lieu, adresse avant tout
 })();
+
+// ---------- Photos tatouées : l'image est dessinée avec le nom de la personne connectée incrusté dedans ----------
+// (aucune image brute dans la page : un appui long, un glisser ou un enregistrement donne une photo nominative)
+function stampPhotos() {
+  if (!ME) return;
+  const who = `${ME.prenom} ${ME.nom}`.toUpperCase(), day = new Date().toLocaleDateString('fr-FR');
+  const draw = c => {
+    if (c.dataset.done) return; c.dataset.done = '1';
+    const im = new Image(); im.decoding = 'async';
+    im.onload = () => {
+      const d = Math.min(devicePixelRatio || 1, 2), W = Math.max(1, c.clientWidth) * d, H = Math.max(1, c.clientHeight) * d;
+      c.width = W; c.height = H; const x = c.getContext('2d');
+      const r = Math.max(W / im.naturalWidth, H / im.naturalHeight), w = im.naturalWidth * r, h = im.naturalHeight * r;
+      x.drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
+      x.save(); x.translate(W / 2, H / 2); x.rotate(-0.5); x.textAlign = 'center';
+      const fs = Math.max(11, W / 13); x.font = `800 ${fs}px Inter, sans-serif`; x.lineWidth = Math.max(1, fs / 9);
+      for (let k = -3; k <= 3; k++) {
+        const y = k * fs * 2.6, t = k % 2 ? `${day} · CONFIDENTIEL` : who;
+        x.strokeStyle = 'rgba(0,0,0,.28)'; x.strokeText(t, 0, y); x.fillStyle = 'rgba(255,255,255,.42)'; x.fillText(t, 0, y);
+      }
+      x.restore();
+    };
+    im.src = c.dataset.src;
+  };
+  const cs = [...document.querySelectorAll('canvas.wmimg')];
+  if (!('IntersectionObserver' in window)) return cs.forEach(draw);
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { io.unobserve(e.target); draw(e.target); } }), { rootMargin: '300px' });
+  cs.forEach(c => io.observe(c));
+}
