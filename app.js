@@ -522,7 +522,7 @@ function pickPhoto({ kind = 'album', defi = '', cap = '' } = {}) {
       picked = true; EVGSec.quiet(4000); const f = inp.files && inp.files[0]; if (!f) return resolve(null);
       let bmp; try { bmp = await createImageBitmap(f); } catch { try { const u = URL.createObjectURL(f); bmp = await new Promise((ok, ko) => { const im = new Image(); im.onload = () => ok(im); im.onerror = ko; im.src = u; }); } catch { toast('⚠️ Photo illisible (essaie une autre).'); return resolve(null); } }
       const enc = (max, q) => { const r = Math.min(1, max / Math.max(bmp.width, bmp.height)), c = document.createElement('canvas'); c.width = Math.round(bmp.width * r); c.height = Math.round(bmp.height * r); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); return { url: c.toDataURL('image/jpeg', q), w: c.width, h: c.height, c }; };
-      let full = enc(1600, .82); if (full.url.length > 1000000) full = enc(1280, .72); if (full.url.length > 1000000) full = enc(1024, .65);
+      let full = enc(1600, .8); if (full.url.length > 680000) full = enc(1280, .72); if (full.url.length > 680000) full = enc(1024, .65); if (full.url.length > 680000) full = enc(860, .6);
       const thumb = enc(480, .72);
       // aperçu + légende
       $('up').hidden = false; document.body.classList.add('noscroll'); $('upTitle').textContent = kind === 'proof' ? '🎯 Ta preuve' : '📸 Ta photo d\'Elie'; $('upCap').value = cap; $('upMsg').textContent = '';

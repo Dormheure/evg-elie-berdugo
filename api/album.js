@@ -3,7 +3,8 @@ const L = require('./_lib');
 const { redis, json, rateLimit, body, isJson, str, hgetall, pipeline } = L;
 const EMO = ['😂', '🔥', '💀', '❤️'];
 const BASE = Array.from({ length: 40 }, (_, i) => 'b-elie' + String(i + 1).padStart(2, '0'));   // photos de base (photos/elieXX.jpg)
-const MAX_TOTAL = 400, MAX_PER = 60, MAX_FULL = 1100000, MAX_THUMB = 160000;   // tailles en base64
+const MAX_TOTAL = 300, MAX_PER = 40, MAX_FULL = 700000, MAX_THUMB = 160000;   // tailles en base64
+const BUDGET = 120 * 1024 * 1024;   // 120 Mo pour tout l'album : la base (sessions, réponses…) ne doit jamais être pleine
 const b64jpeg = (v, max) => {
   const s = String(v || '').replace(/^data:image\/jpeg;base64,/, '');
   if (!s || s.length > max || !/^[A-Za-z0-9+/=]+$/.test(s)) return null;
@@ -49,8 +50,10 @@ module.exports = async (req, res) => {
       const all = await hgetall('evg:album');
       if (all.length >= MAX_TOTAL) return json(res, 400, { error: 'L\'album est plein.' });
       if (all.filter(p => p.by === me.id).length >= MAX_PER) return json(res, 400, { error: `Tu as déjà ajouté ${MAX_PER} photos, ça suffit 😅` });
+      const size = full.length + thumb.length;
+      if ((await redis('INCRBY', 'evg:album:bytes', size)) > BUDGET) { await redis('DECRBY', 'evg:album:bytes', size); return json(res, 400, { error: 'L\'album est plein (place réservée au reste du site). Demande à un orga de faire du tri.' }); }
       const p = {
-        id: crypto.randomBytes(6).toString('hex'), by: me.id, auteur: me.prenom,
+        id: crypto.randomBytes(6).toString('hex'), by: me.id, auteur: me.prenom, size,
         legende: str(b.legende, 140), kind: b.kind === 'proof' ? 'proof' : 'album', defi: str(b.defi, 40),
         w: Math.max(0, Math.min(4000, parseInt(b.w, 10) || 0)), h: Math.max(0, Math.min(4000, parseInt(b.h, 10) || 0)),
         createdAt: new Date().toISOString(),
@@ -69,8 +72,8 @@ module.exports = async (req, res) => {
     const id = L.cleanId(b.id, 20), p = L.parse(await redis('HGET', 'evg:album', id));
     if (!p) return json(res, 404, { error: 'Photo introuvable.' });
     if (p.by !== me.id && !isAdmin) return json(res, 403, { error: 'Seul l\'auteur (ou un orga) peut faire ça.' });
-    if (b.action === 'delete') { await pipeline([['DEL', `evg:ph:${id}`], ['DEL', `evg:phr:${id}`], ['HDEL', 'evg:album', id]]); return json(res, 200, { ok: true }); }
-    if (b.action === 'legende') { p.legende = str(b.legende, 140); await redis('HSET', 'evg:album', id, JSON.stringify(p)); return json(res, 200, { ok: true }); }
+    if (b.action === 'delete') { await pipeline([['DEL', `evg:ph:${id}`], ['DEL', `evg:phr:${id}`], ['HDEL', 'evg:album', id], ['DECRBY', 'evg:album:bytes', p.size || 0]]); return json(res, 200, { ok: true }); }
+    if (b.action === 'legende') { p.legende = str(b.legende, 140); if (!(await redis('HEXISTS', 'evg:album', id))) return json(res, 404, { error: 'Photo supprimée entre-temps.' }); await redis('HSET', 'evg:album', id, JSON.stringify(p)); return json(res, 200, { ok: true }); }
     json(res, 400, { error: 'Action inconnue.' });
   } catch (e) { json(res, 500, { error: 'Erreur serveur' }); }
 };

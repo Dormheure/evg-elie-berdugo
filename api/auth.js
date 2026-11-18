@@ -60,7 +60,7 @@ module.exports = async (req, res) => {
     if (b.action === 'admin') {
       if (!(await rateLimit(req, 'login', 10, 900))) return json(res, 429, { error: 'Trop d\'essais. Réessaie dans 15 minutes.' });
       const user = norm(b.user);
-      if (!DISPLAY[user] || !L.checkPassword(user, String(b.password || ''))) {
+      if (!Object.prototype.hasOwnProperty.call(DISPLAY, user) || !L.checkPassword(user, String(b.password || ''))) {
         await L.logEvent(req, 'admin_fail', { who: str(b.user, 30) });
         return json(res, 401, { error: 'Identifiants incorrects.' });
       }
@@ -81,7 +81,7 @@ module.exports = async (req, res) => {
         const g = geo(req), now = new Date().toISOString(), newIp = ip(req);
         if (sess.city && g.city && sess.city !== g.city) await L.logEvent(req, 'city_change', { m: m.id, who: `${m.prenom} ${m.nom}`, from: sess.city, to: g.city });
         const next = { ...sess, lastSeen: now, ip: newIp, city: g.city || sess.city, country: g.country || sess.country, page: str(b.page, 30), ok: m.status === 'active' };
-        await redis('SET', `evg:sess:${sess.sid}`, JSON.stringify(next), 'EX', 400 * 86400);
+        await redis('SET', `evg:sess:${sess.sid}`, JSON.stringify(next), 'XX', 'EX', 400 * 86400);   // XX : une session révoquée entre-temps n'est pas recréée
         res.setHeader('Set-Cookie', L.sessionCookie(sess.sid, m.id, req));   // session renouvelée : connecté « à vie »
         return json(res, 200, { status: m.status });
       }
@@ -120,7 +120,7 @@ module.exports = async (req, res) => {
 
     if (b.action === 'login') {
       if (!(await rateLimit(req, 'mlogin', 25, 900))) return json(res, 429, { error: 'Trop d\'essais. Réessaie dans 15 minutes.' });
-      const failKey = `evg:fail:${id}`;
+      const failKey = `evg:fail:${id}:${String(ip(req)).replace(/[^0-9a-fA-F.:]/g, '').slice(0, 45)}`;
       if ((parseInt(await redis('GET', failKey), 10) || 0) >= 6) return json(res, 429, { error: 'Compte verrouillé 15 minutes après trop d\'essais.' });
       const m = await L.getAccount(id);
       if (!m || !L.checkPin(m.pin, pin)) {

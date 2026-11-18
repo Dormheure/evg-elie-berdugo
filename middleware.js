@@ -33,7 +33,8 @@ export default async function middleware(request) {
   if (url.pathname.startsWith('/api/') || PUBLIC.has(url.pathname)) return next();
   if (await validSession(request.headers.get('cookie'))) {
     // photos : seul le site peut les charger (pour les dessiner tatouées) ; ouvrir l'adresse dans un onglet ou l'enregistrer = refusé
-    if (url.pathname.startsWith('/photos/') && request.headers.get('x-evg') !== '1') return new Response('Accès direct interdit', { status: 403, headers: { 'Cache-Control': 'no-store' } });
+    let p = url.pathname; try { p = decodeURIComponent(p); } catch {}
+    if (p.toLowerCase().startsWith('/photos/') && request.headers.get('x-evg') !== '1') return new Response('Accès direct interdit', { status: 403, headers: { 'Cache-Control': 'no-store' } });
     return next();
   }
   if (BOTS.test(request.headers.get('user-agent') || '')) return new Response(PREVIEW, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });

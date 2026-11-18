@@ -20,6 +20,7 @@ async function pipeline(cmds) {
     body: JSON.stringify(cmds),
   });
   const j = await r.json();
+  if (!Array.isArray(j)) throw new Error((j && j.error) || 'pipeline');
   return j.map(x => { if (x.error) throw new Error(x.error); return x.result; });
 }
 function flatToItems(flat) {
@@ -53,8 +54,8 @@ const DISPLAY = { david: 'David', alon: 'Alon', raphael: 'Raphaël' };
 function checkPassword(user, password) {
   let users = {};
   try { users = JSON.parse(process.env.ADMIN_USERS || '{}'); } catch {}
-  const stored = users[user];
-  if (!stored) { crypto.scryptSync(String(password), 'x', 32); return false; } // temps constant
+  const stored = Object.prototype.hasOwnProperty.call(users, user) ? users[user] : null;
+  if (typeof stored !== 'string' || !stored.includes(':')) { crypto.scryptSync(String(password), 'x', 32); return false; } // temps constant
   const [salt, hash] = stored.split(':');
   const test = crypto.scryptSync(String(password), salt, 32);
   const good = Buffer.from(hash, 'hex');
@@ -147,7 +148,7 @@ async function revokeAll(mid, exceptSid) {
 // Le statut du compte est recopié dans chaque session : c'est ce que lit le middleware (validation / blocage immédiats)
 async function syncSessions(m) {
   const ok = m.status === 'active';
-  for (const s of await listSessions(m.id)) await redis('SET', `evg:sess:${s.sid}`, JSON.stringify({ ...s, ok }), 'KEEPTTL');
+  for (const s of await listSessions(m.id)) await redis('SET', `evg:sess:${s.sid}`, JSON.stringify({ ...s, ok }), 'XX', 'KEEPTTL');
 }
 // Session courante : {sess, member} ou null. Ne renvoie que les sessions validées sauf {allowPending:true}.
 async function getSession(req, { allowPending = false } = {}) {

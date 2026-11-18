@@ -1,6 +1,21 @@
 const L = require('./_lib');
 const { redis, json, rateLimit, body, isJson, str, hgetall } = L;
-const KEY = /^(s\d{1,3}|x[a-z0-9]{4,24})$/, PTS = [1, 2, 3, 5];
+const fs = require('fs'), path = require('path'), vm = require('vm');
+const KEY = /^(s\d{1,3}|x[a-z0-9]{4,24})$/, LVLPTS = { 1: 1, 2: 2, 3: 3, 4: 5, g: 3 };
+// La liste officielle des défis vient de data.js (même fichier que le site) : le serveur décide des points, pas le navigateur
+let STATIC = null;
+function staticDefis() {
+  if (STATIC) return STATIC;
+  for (const f of [path.join(__dirname, '..', 'data.js'), path.join(process.cwd(), 'data.js')]) {
+    try { const sb = { window: {} }; vm.runInNewContext(fs.readFileSync(f, 'utf8'), sb, { timeout: 200 }); const d = sb.window.SITE && sb.window.SITE.defis; if (Array.isArray(d)) return (STATIC = d); } catch {}
+  }
+  return [];
+}
+// points d'un défi existant, ou null s'il n'existe pas (ou plus)
+function ptsOf(k, extra) {
+  if (k[0] === 's') { const d = staticDefis()[+k.slice(1)]; return d && LVLPTS[d.n] !== undefined ? LVLPTS[d.n] : null; }
+  const d = extra[k.slice(1)]; return d && LVLPTS[d.n] !== undefined ? LVLPTS[d.n] : null;
+}
 
 // Défis partagés par tout le groupe : qui a validé quoi, preuve photo, classement des complices
 // GET  : { done: {k: {...}}, board: [{auteur, pts, nb}] }
@@ -10,8 +25,10 @@ module.exports = async (req, res) => {
     const s = await L.getSession(req); if (!s) return json(res, 401, { error: 'Connecte-toi.' });
     const me = s.member, isAdmin = me.role === 'admin';
     if (req.method === 'GET') {
-      const list = await hgetall('evg:defidone'), done = {}, by = {};
+      const [list, ex] = await Promise.all([hgetall('evg:defidone'), hgetall('evg:defis')]), extra = Object.fromEntries(ex.map(d => [d.id, d])), done = {}, by = {};
       for (const d of list) {
+        const pts = ptsOf(d.k, extra); if (pts === null) continue;    // défi retiré depuis : il ne compte plus
+        d.pts = pts;
         done[d.k] = { ...d, mine: d.by === me.id, canUndo: d.by === me.id || isAdmin };
         const b = by[d.by] || (by[d.by] = { auteur: d.auteur, pts: 0, nb: 0, me: d.by === me.id });
         b.pts += d.pts; b.nb++;
@@ -26,7 +43,8 @@ module.exports = async (req, res) => {
     const k = String(b.k || ''); if (!KEY.test(k)) return json(res, 400, { error: 'Défi inconnu.' });
 
     if (b.action === 'done') {
-      const pts = PTS.includes(+b.pts) ? +b.pts : 1;
+      const extra = k[0] === 'x' ? Object.fromEntries((await hgetall('evg:defis')).map(d => [d.id, d])) : {};
+      const pts = ptsOf(k, extra); if (pts === null) return json(res, 400, { error: 'Ce défi n\'existe pas (ou plus).' });
       const d = { k, pts, by: me.id, auteur: me.prenom, at: new Date().toISOString(), proof: L.cleanId(b.proof, 20) };
       const ok = await redis('HSETNX', 'evg:defidone', k, JSON.stringify(d));
       if (!ok) { const old = L.parse(await redis('HGET', 'evg:defidone', k)); return json(res, 409, { error: `Déjà validé par ${old?.auteur || 'quelqu\'un'} !` }); }
@@ -36,7 +54,7 @@ module.exports = async (req, res) => {
     if (!d) return json(res, 404, { error: 'Ce défi n\'est pas validé.' });
     if (d.by !== me.id && !isAdmin) return json(res, 403, { error: 'Seul celui qui l\'a validé (ou un orga) peut faire ça.' });
     if (b.action === 'undo') { await redis('HDEL', 'evg:defidone', k); return json(res, 200, { ok: true }); }
-    if (b.action === 'proof') { d.proof = L.cleanId(b.proof, 20); await redis('HSET', 'evg:defidone', k, JSON.stringify(d)); return json(res, 200, { ok: true }); }
+    if (b.action === 'proof') { d.proof = L.cleanId(b.proof, 20); if (!(await redis('HEXISTS', 'evg:defidone', k))) return json(res, 404, { error: 'Défi annulé entre-temps.' }); await redis('HSET', 'evg:defidone', k, JSON.stringify(d)); return json(res, 200, { ok: true }); }
     json(res, 400, { error: 'Action inconnue.' });
   } catch (e) { json(res, 500, { error: 'Erreur serveur' }); }
 };
